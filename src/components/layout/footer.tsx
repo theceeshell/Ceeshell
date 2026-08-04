@@ -18,6 +18,7 @@ interface FooterProps {
   copyrightText: string;
   privacyPolicyHref: string;
   termsHref: string;
+  logoUrl?: string | null;
 }
 
 export function Footer({
@@ -29,6 +30,7 @@ export function Footer({
   copyrightText,
   privacyPolicyHref,
   termsHref,
+  logoUrl,
 }: FooterProps) {
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-primary text-white">
@@ -40,7 +42,12 @@ export function Footer({
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
           <div className="max-w-sm space-y-6">
             <Link href="/" className="flex items-center gap-2.5">
-              <Logo className="h-8 w-8 text-white" />
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt={websiteName} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
+              ) : (
+                <Logo className="h-8 w-8 text-white" />
+              )}
               <span className="font-heading text-2xl font-medium">{websiteName}</span>
             </Link>
             <p className="text-sm leading-relaxed text-white/65">{description}</p>

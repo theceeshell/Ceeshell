@@ -19,9 +19,10 @@ interface NavbarProps {
   navItems: NavItem[];
   email: string;
   phone: string;
+  logoUrl?: string | null;
 }
 
-export function Navbar({ websiteName, navItems, email, phone }: NavbarProps) {
+export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
 
@@ -51,7 +52,12 @@ export function Navbar({ websiteName, navItems, email, phone }: NavbarProps) {
       >
         <div className={cn("container-agency flex items-center justify-between transition-all duration-500", solid ? "py-3.5" : "py-6")}>
           <Link href="/" className="relative z-10 flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <Logo className={cn("h-8 w-8 transition-colors duration-500", solid ? "text-primary" : "text-white")} />
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={websiteName} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
+            ) : (
+              <Logo className={cn("h-8 w-8 transition-colors duration-500", solid ? "text-primary" : "text-white")} />
+            )}
             <span
               className={cn(
                 "font-heading text-2xl font-medium tracking-tight transition-colors duration-500",

@@ -33,7 +33,13 @@ export default async function MarketingLayout({ children }: { children: React.Re
       >
         Skip to content
       </a>
-      <Navbar websiteName={settings.websiteName} navItems={navItems} email={settings.email} phone={settings.phone} />
+      <Navbar
+        websiteName={settings.websiteName}
+        navItems={navItems}
+        email={settings.email}
+        phone={settings.phone}
+        logoUrl={settings.logoUrl}
+      />
       <main id="main-content" className="flex-1">
         {children}
       </main>
@@ -46,6 +52,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
         copyrightText={footer.copyrightText}
         privacyPolicyHref={footer.privacyPolicyHref}
         termsHref={footer.termsHref}
+        logoUrl={settings.footerLogoUrl ?? settings.logoUrl}
       />
     </>
   );
