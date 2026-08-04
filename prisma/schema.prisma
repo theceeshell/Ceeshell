@@ -1,10 +1,9 @@
 // Cee-Shell CMS schema.
 //
-// Written to be Postgres-portable from a SQLite starting point:
-// - no native `enum` (SQLite has none) -> plain String fields with documented value sets
-// - no native array columns -> Json fields
-// Switching later is just: change `provider` below to "postgresql", point
-// DATABASE_URL at the new instance, and run `prisma migrate dev`.
+// Runs on PostgreSQL (e.g. Supabase). Originally written to be Postgres-portable
+// from a SQLite prototype, so it still avoids native `enum` in favor of plain
+// String fields with documented value sets -- purely a style choice at this
+// point, not a compatibility requirement.
 
 generator client {
   provider = "prisma-client"
@@ -12,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // ---------------------------------------------------------------------------
