@@ -10,7 +10,9 @@ function createClient() {
       "DATABASE_URL is not set. Add your Postgres connection string (e.g. from Supabase) to .env locally, or to your hosting provider's environment variables in production."
     );
   }
-  const pool = globalForPrisma.pgPool ?? new Pool({ connectionString: process.env.DATABASE_URL });
+  // Keep the per-instance pool small: Vercel can spin up many concurrent serverless
+  // instances, each with its own Pool, all sharing Supabase's pooled connection limit.
+  const pool = globalForPrisma.pgPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: 3 });
   const adapter = new PrismaPg(pool);
   if (process.env.NODE_ENV !== "production") {
     globalForPrisma.pgPool = pool;

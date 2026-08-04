@@ -5,16 +5,22 @@ import { siteConfig } from "@/lib/site-config";
 import { getSiteSettings } from "@/lib/cms/site-data";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSiteSettings();
-  const title = `${settings.websiteName} — ${settings.tagline}`;
+  // This runs on every request across the whole app (admin included) since it's
+  // in the root layout. A transient DB error here must never take the site down,
+  // so fall back to the static siteConfig defaults instead of throwing.
+  const settings = await getSiteSettings().catch(() => null);
+  const websiteName = settings?.websiteName ?? siteConfig.name;
+  const tagline = settings?.tagline ?? siteConfig.tagline;
+  const description = settings?.defaultSeoDescription ?? siteConfig.description;
+  const title = `${websiteName} — ${tagline}`;
 
   return {
     metadataBase: new URL(siteConfig.url),
     title: {
       default: title,
-      template: `%s — ${settings.websiteName}`,
+      template: `%s — ${websiteName}`,
     },
-    description: settings.defaultSeoDescription,
+    description,
     keywords: [
       "branding agency",
       "packaging design",
@@ -26,23 +32,23 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       url: siteConfig.url,
-      siteName: settings.websiteName,
+      siteName: websiteName,
       title,
-      description: settings.defaultSeoDescription,
+      description,
     },
     twitter: {
-      card: (settings.twitterCardType as "summary" | "summary_large_image") ?? "summary_large_image",
+      card: (settings?.twitterCardType as "summary" | "summary_large_image") ?? "summary_large_image",
       title,
-      description: settings.defaultSeoDescription,
+      description,
     },
     alternates: {
       canonical: siteConfig.url,
     },
     robots: {
-      index: settings.robotsIndex,
-      follow: settings.robotsFollow,
+      index: settings?.robotsIndex ?? true,
+      follow: settings?.robotsFollow ?? true,
     },
-    verification: settings.googleVerification ? { google: settings.googleVerification } : undefined,
+    verification: settings?.googleVerification ? { google: settings.googleVerification } : undefined,
   };
 }
 
