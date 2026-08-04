@@ -1,0 +1,295 @@
+// Cee-Shell CMS schema.
+//
+// Written to be Postgres-portable from a SQLite starting point:
+// - no native `enum` (SQLite has none) -> plain String fields with documented value sets
+// - no native array columns -> Json fields
+// Switching later is just: change `provider` below to "postgresql", point
+// DATABASE_URL at the new instance, and run `prisma migrate dev`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+/// role: "ADMIN" | "EDITOR"
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("EDITOR")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Site-wide configuration (each of these is a singleton row, id = "singleton")
+// ---------------------------------------------------------------------------
+
+model SiteSettings {
+  id                    String   @id @default("singleton")
+  websiteName           String
+  companyName           String
+  tagline               String
+  email                 String
+  phone                 String
+  whatsapp              String
+  address               String
+  businessHours         String
+  googleMapsUrl         String
+  /// { instagram, linkedin, behance, pinterest, facebook, tiktok, youtube }
+  socialLinks           Json
+  logoUrl               String?
+  footerLogoUrl         String?
+  faviconUrl            String?
+  defaultSeoTitle       String
+  defaultSeoDescription String
+  defaultOgImageUrl     String?
+  twitterCardType       String   @default("summary_large_image")
+  robotsIndex           Boolean  @default(true)
+  robotsFollow          Boolean  @default(true)
+  googleVerification    String?
+  updatedAt             DateTime @updatedAt
+}
+
+model NavigationItem {
+  id         String  @id @default(cuid())
+  label      String
+  href       String
+  order      Int     @default(0)
+  openNewTab Boolean @default(false)
+  visible    Boolean @default(true)
+}
+
+model FooterConfig {
+  id                String   @id @default("singleton")
+  description       String
+  copyrightText     String
+  privacyPolicyHref String   @default("/privacy-policy")
+  termsHref         String   @default("/terms")
+  /// Array of { label, href }
+  quickLinks        Json
+  /// Array of { label, href }
+  serviceLinks      Json
+  updatedAt         DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Section-based page builder
+//
+// A Page has many Sections. A Section has a `type` (one of the SECTION_TYPES
+// in src/lib/cms/section-types.ts) and a `content` JSON blob whose shape is
+// validated against that type's Zod schema. Sections that showcase reusable
+// content (testimonials, services, portfolio, faqs) store references
+// (ids/slugs) in `content` rather than copying the data, per the
+// avoid-duplicate-data rule -- the renderer resolves those references against
+// the live tables at request time.
+//
+// This is the "Page -> Section -> Component" hierarchy: each section's
+// `content` JSON is itself a tree of component props (e.g. a Hero section's
+// content is { badge, heading, buttons: [...], background }).
+// ---------------------------------------------------------------------------
+
+model Page {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  description String
+  sections    Section[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  pageId    String
+  type      String
+  name      String
+  order     Int      @default(0)
+  enabled   Boolean  @default(true)
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageId, order])
+}
+
+// ---------------------------------------------------------------------------
+// Content entities
+// ---------------------------------------------------------------------------
+
+model Service {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  shortName      String
+  icon           String
+  tagline        String
+  summary        String
+  heroImageUrl   String
+  /// string[]
+  overview       Json
+  /// { title, description }[]
+  benefits       Json
+  /// { title, description }[]
+  process        Json
+  /// { title, description }[]
+  subServices    Json
+  /// string[] (media URLs)
+  gallery        Json
+  /// { question, answer }[]
+  faqs           Json
+  order          Int      @default(0)
+  featured       Boolean  @default(true)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+/// coverAspect: "portrait" | "landscape" | "square"
+model PortfolioProject {
+  id             String       @id @default(cuid())
+  slug           String       @unique
+  title          String
+  client         String
+  industry       String
+  year           String
+  /// string[]
+  categories     Json
+  /// string[]
+  servicesUsed   Json
+  excerpt        String
+  coverImageUrl  String
+  coverAspect    String       @default("landscape")
+  /// string[] (media URLs)
+  gallery        Json
+  challenge      String
+  research       String
+  strategy       String
+  concept        String
+  designProcess  String
+  photography    String
+  printing       String
+  /// string[]
+  deliverables   Json
+  testimonialId  String?
+  testimonial    Testimonial? @relation(fields: [testimonialId], references: [id])
+  industries     Industry[]   @relation("IndustryProjects")
+  featured       Boolean      @default(false)
+  order          Int          @default(0)
+  seoTitle       String?
+  seoDescription String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Industry {
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  name            String
+  heroImageUrl    String
+  summary         String
+  /// string[]
+  painPoints      Json
+  /// string[]
+  solutions       Json
+  relatedProjects PortfolioProject[] @relation("IndustryProjects")
+  order           Int                @default(0)
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  name      String
+  position  String
+  bio       String
+  photoUrl  String?
+  linkedin  String?
+  instagram String?
+  behance   String?
+  order     Int     @default(0)
+  active    Boolean @default(true)
+}
+
+model Testimonial {
+  id         String             @id @default(cuid())
+  clientName String
+  company    String
+  position   String
+  photoUrl   String?
+  review     String
+  rating     Int                @default(5)
+  featured   Boolean            @default(false)
+  order      Int                @default(0)
+  projects   PortfolioProject[]
+}
+
+/// status: "draft" | "published"
+model BlogPost {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  featuredImageUrl String
+  author           String
+  category         String
+  /// string[]
+  tags             Json
+  excerpt          String
+  /// Tiptap JSON document
+  contentJson      Json
+  /// Rendered HTML cache, generated from contentJson on save
+  contentHtml      String
+  publishDate      DateTime @default(now())
+  status           String   @default("draft")
+  featured         Boolean  @default(false)
+  seoTitle         String?
+  seoDescription   String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+  category String @default("General")
+  order    Int    @default(0)
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  folder    String   @default("general")
+  alt       String   @default("")
+  createdAt DateTime @default(now())
+}
+
+/// status: "new" | "in_progress" | "closed"
+model ContactInquiry {
+  id            String   @id @default(cuid())
+  name          String
+  company       String
+  phone         String?
+  email         String
+  budget        String?
+  timeline      String?
+  service       String?
+  industry      String?
+  message       String
+  attachmentUrl String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+}
