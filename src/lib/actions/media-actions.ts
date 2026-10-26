@@ -73,7 +73,10 @@ export async function createMediaUploadAction(input: z.input<typeof uploadReques
     if (size > (isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES)) {
       return { error: isVideo ? "Videos must be 100 MB or smaller." : "Images must be 10 MB or smaller." };
     }
-    return { provider: "cloudinary", ...createSignedUpload(isVideo ? "video" : "image", folder) };
+    return {
+      provider: "cloudinary",
+      ...createSignedUpload(isVideo ? "video" : "image", folder, { storeAsWebp: type === "image/png" }),
+    };
   }
 
   if (isVideo) return { error: "Video uploads need Cloudinary. You can paste a video link instead." };

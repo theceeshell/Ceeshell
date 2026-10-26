@@ -48,16 +48,38 @@ const ALLOWED_FORMATS: Record<CloudinaryResourceType, string> = {
 };
 
 /**
+ * Applied to images as Cloudinary receives them, before storing: scale down
+ * to fit 2560x2560 (never up) and re-encode at high quality. Phone/camera
+ * photos (4000+ px, 5-12 MB) shrink by most of their size with no visible
+ * difference on the site, saving free-plan storage. Delivery still converts
+ * to WebP/AVIF per browser (f_auto). Videos are stored as uploaded.
+ */
+const IMAGE_INCOMING_TRANSFORMATION = "c_limit,w_2560,h_2560,q_auto:best";
+
+/**
  * Form fields + URL for one direct browser upload (valid for about an hour).
  * The public_id is chosen here ("ceeshell/<folder>/<random>"), which behaves
- * the same in Cloudinary's fixed- and dynamic-folder account modes.
+ * the same in Cloudinary's fixed- and dynamic-folder account modes. Every
+ * param is signed, so the browser can't drop or change the size cap.
+ *
+ * `storeAsWebp` is used for PNGs: PNG is lossless, so a photo saved as PNG
+ * stays several MB even after resizing, while WebP keeps the same look (and
+ * transparency) at a fraction of the size.
  */
-export function createSignedUpload(resourceType: CloudinaryResourceType, folder: string) {
+export function createSignedUpload(
+  resourceType: CloudinaryResourceType,
+  folder: string,
+  { storeAsWebp = false }: { storeAsWebp?: boolean } = {}
+) {
   const { cloudName, apiKey, apiSecret } = requireConfig();
-  const params = {
+  const params: Record<string, string | number> = {
     allowed_formats: ALLOWED_FORMATS[resourceType],
     public_id: `${CLOUDINARY_ROOT_FOLDER}/${folder}/${randomBytes(9).toString("base64url")}`,
     timestamp: Math.floor(Date.now() / 1000),
+    // (The `format` upload param doesn't convert when an incoming transformation is set; f_webp inside it does.)
+    ...(resourceType === "image"
+      ? { transformation: storeAsWebp ? `${IMAGE_INCOMING_TRANSFORMATION},f_webp` : IMAGE_INCOMING_TRANSFORMATION }
+      : {}),
   };
   return {
     uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
