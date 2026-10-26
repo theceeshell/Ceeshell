@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { subscribeNewsletterAction, type NewsletterState } from "@/lib/actions/newsletter-actions";
+import { submitKeepingValues } from "@/lib/form-submit";
 
 const initialState: NewsletterState = {};
 
@@ -23,7 +24,7 @@ export function NewsletterForm({ dark = false }: { dark?: boolean }) {
   }
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form onSubmit={submitKeepingValues(formAction)} className="flex flex-col gap-2">
       {/* Honeypot: hidden from people and assistive tech, but bots fill it in. */}
       <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
         <input name="website" type="text" tabIndex={-1} autoComplete="off" />

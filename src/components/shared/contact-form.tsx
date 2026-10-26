@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { submitInquiryAction, type InquiryState } from "@/lib/actions/inquiry-actions";
+import { submitKeepingValues } from "@/lib/form-submit";
 
 const budgets = [
   "Under PKR 150,000",
@@ -50,7 +51,7 @@ export function ContactForm({ industries, services }: ContactFormProps) {
   }
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form onSubmit={submitKeepingValues(formAction)} className="space-y-8">
       {/* Honeypot: hidden from people and assistive tech, but bots fill it in. */}
       <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
         <label htmlFor="website">Website</label>

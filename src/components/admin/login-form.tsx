@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { loginAction, type LoginState } from "@/lib/actions/auth-actions";
+import { submitKeepingValues } from "@/lib/form-submit";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
@@ -12,7 +13,7 @@ export function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form onSubmit={submitKeepingValues(formAction)} className="space-y-5">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" required placeholder="you@cee-shell.com" autoComplete="username" />

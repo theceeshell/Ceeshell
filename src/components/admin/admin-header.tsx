@@ -1,5 +1,6 @@
 "use client";
 
+import { startTransition } from "react";
 import { Menu, ChevronDown, LogOut, User } from "lucide-react";
 import { logoutAction } from "@/lib/actions/auth-actions";
 import {
@@ -43,13 +44,10 @@ export function AdminHeader({ title, name, email, role, onOpenMenu }: AdminHeade
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>{email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <form action={logoutAction} className="contents">
-            <DropdownMenuItem asChild>
-              <button type="submit" className="w-full text-left text-red-600">
-                <LogOut className="h-4 w-4" /> Sign Out
-              </button>
-            </DropdownMenuItem>
-          </form>
+          {/* Invoked directly: a <form> inside the menu is unmounted before it can submit. */}
+          <DropdownMenuItem className="text-red-600" onSelect={() => startTransition(() => logoutAction())}>
+            <LogOut className="h-4 w-4" /> Sign Out
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>
