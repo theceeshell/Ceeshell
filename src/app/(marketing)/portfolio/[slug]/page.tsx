@@ -7,7 +7,7 @@ import { ArrowRight, ArrowUpRight, Quote } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { pageMetadata } from "@/lib/cms/metadata";
 import { getSiteTexts } from "@/lib/cms/site-data";
-import type { SiteTexts } from "@/lib/cms/site-texts";
+import { fill, type SiteTexts } from "@/lib/cms/site-texts";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/shared/reveal";
 import { ProjectCard } from "@/components/shared/project-card";
 import { CtaBanner, ctaProps } from "@/components/shared/cta-banner";
 import { toProjectCard } from "@/lib/cms/adapters";
+import { redirectIfMoved } from "@/lib/cms/redirects";
 
 export async function generateStaticParams() {
   const projects = await prisma.portfolioProject.findMany({ where: { visible: true }, select: { slug: true } });
@@ -28,10 +29,10 @@ const getProject = cache((slug: string) =>
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getProject(slug);
+  const [project, texts] = await Promise.all([getProject(slug), getSiteTexts()]);
   if (!project) return {};
   return pageMetadata({
-    title: project.seoTitle || `${project.title} — Case Study`,
+    title: project.seoTitle || fill(texts.projectPage.seoTitle, { project: project.title }),
     description: project.seoDescription || project.excerpt,
     path: `/portfolio/${project.slug}`,
     image: project.coverImageUrl,
@@ -56,7 +57,10 @@ function storyBlocks(
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = await getProject(slug);
-  if (!project) notFound();
+  if (!project) {
+    await redirectIfMoved(`/portfolio/${slug}`);
+    notFound();
+  }
 
   const categories = project.categories as string[];
   const servicesUsed = project.servicesUsed as string[];
@@ -153,7 +157,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
                 <div className={`relative w-full overflow-hidden rounded-[1.5rem] ${i === 0 ? "aspect-[16/9]" : "aspect-[4/3]"}`}>
                   <Image
                     src={src}
-                    alt={`${project.title} gallery image ${i + 1}`}
+                    alt={fill(t.galleryAlt, { project: project.title, number: i + 1 })}
                     fill
                     sizes="(min-width: 640px) 50vw, 100vw"
                     className="object-cover"

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { siteConfig } from "@/lib/site-config";
+import { livePostFilter } from "@/lib/cms/blog";
 
 // Regenerated with the rest of the site whenever content changes (revalidateSite()).
 export const revalidate = 86400;
@@ -11,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.service.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
     prisma.portfolioProject.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
     prisma.industry.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
-    prisma.blogPost.findMany({ where: { status: "published" }, select: { slug: true, updatedAt: true } }),
+    prisma.blogPost.findMany({ where: livePostFilter(), select: { slug: true, updatedAt: true } }),
   ]);
 
   const url = (path: string) => `${siteConfig.url}${path}`;

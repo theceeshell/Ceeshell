@@ -47,7 +47,7 @@ export async function SectionRenderer({ section, breadcrumbLabel }: SectionRende
   switch (section.type) {
     case "hero": {
       if (c.variant === "home") {
-        return <Hero badge={c.badge} heading={c.heading} description={c.description} backgroundImageUrl={c.backgroundImageUrl} primaryButton={c.primaryButton} secondaryButton={c.secondaryButton} scrollLabel={texts.general.heroScroll} />;
+        return <Hero badge={c.badge} heading={c.heading} description={c.description} backgroundImageUrl={c.backgroundImageUrl} primaryButton={c.primaryButton} secondaryButton={c.secondaryButton} scrollLabel={texts.general.heroScroll} imageAlt={texts.accessibility.heroImageAlt} scrollAriaLabel={texts.accessibility.heroScroll} />;
       }
       return (
         <PageHero
@@ -161,6 +161,7 @@ export async function SectionRenderer({ section, breadcrumbLabel }: SectionRende
           industries={c.industryOptions ?? []}
           services={c.serviceOptions ?? []}
           texts={{ contactInfo: texts.contactInfo, contactForm: texts.contactForm }}
+          mapTitle={texts.accessibility.mapTitle}
         />
       );
 

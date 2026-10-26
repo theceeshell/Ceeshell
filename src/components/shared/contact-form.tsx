@@ -153,7 +153,7 @@ export function ContactForm({ industries, services, texts: t }: ContactFormProps
             if (file && file.size > MAX_ATTACHMENT_BYTES) {
               e.target.value = "";
               setFileName(null);
-              setFileError("That file is larger than 4 MB. Please attach a smaller file or send it by email.");
+              setFileError(t.fileTooLarge);
               return;
             }
             setFileError(null);

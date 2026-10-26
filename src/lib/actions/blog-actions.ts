@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { recordMove } from "@/lib/cms/redirects";
 import { requireSession } from "@/lib/auth/require-session";
 import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { sanitizeBlogHtml } from "@/lib/cms/html";
@@ -45,7 +46,13 @@ export async function createBlogPostAction(values: BlogPostActionInput): Promise
 export async function updateBlogPostAction(id: string, values: BlogPostActionInput): Promise<ActionResult> {
   await requireSession();
   const data = parseInput(values);
-  const result = await withSlugCheck(() => prisma.blogPost.update({ where: { id }, data }));
+  const result = await withSlugCheck(() =>
+    prisma.$transaction(async (tx) => {
+      const before = await tx.blogPost.findUniqueOrThrow({ where: { id }, select: { slug: true } });
+      await tx.blogPost.update({ where: { id }, data });
+      await recordMove(tx, `/blog/${before.slug}`, `/blog/${data.slug}`);
+    })
+  );
   if (!result) revalidateSite();
   return result;
 }

@@ -16,6 +16,7 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/shared/reveal";
 import { iconMap } from "@/components/shared/icon-map";
 import { CtaBanner, ctaProps } from "@/components/shared/cta-banner";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { redirectIfMoved } from "@/lib/cms/redirects";
 
 export async function generateStaticParams() {
   const services = await prisma.service.findMany({ where: { visible: true }, select: { slug: true } });
@@ -40,7 +41,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const service = await getService(slug);
-  if (!service) notFound();
+  if (!service) {
+    await redirectIfMoved(`/services/${slug}`);
+    notFound();
+  }
 
   const [otherServices, texts] = await Promise.all([
     prisma.service.findMany({ where: { slug: { not: service.slug }, visible: true }, orderBy: { order: "asc" } }),
@@ -141,7 +145,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                 <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
                   <Image
                     src={src}
-                    alt={`${service.name} project example ${i + 1}`}
+                    alt={fill(t.galleryAlt, { service: service.name, number: i + 1 })}
                     fill
                     sizes="(min-width: 1024px) 30vw, 45vw"
                     className="object-cover transition-transform duration-700 hover:scale-105"

@@ -4,6 +4,8 @@ import * as React from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Quote, ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fill } from "@/lib/cms/site-texts";
+import { useA11yTexts } from "@/components/shared/site-texts-provider";
 
 export interface TestimonialCardData {
   quote: string;
@@ -15,6 +17,7 @@ export interface TestimonialCardData {
 export function TestimonialSlider({ testimonials }: { testimonials: TestimonialCardData[] }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "center" });
   const [selected, setSelected] = React.useState(0);
+  const a11y = useA11yTexts();
 
   const scrollTo = React.useCallback((i: number) => emblaApi?.scrollTo(i), [emblaApi]);
   const scrollPrev = React.useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
@@ -61,7 +64,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: TestimonialC
 
       <div className="mt-10 flex items-center justify-center gap-6">
         <button
-          aria-label="Previous testimonial"
+          aria-label={a11y.previousTestimonial}
           onClick={scrollPrev}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white"
         >
@@ -71,7 +74,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: TestimonialC
           {testimonials.map((_, i) => (
             <button
               key={i}
-              aria-label={`Go to testimonial ${i + 1}`}
+              aria-label={fill(a11y.goToTestimonial, { number: i + 1 })}
               onClick={() => scrollTo(i)}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
@@ -81,7 +84,7 @@ export function TestimonialSlider({ testimonials }: { testimonials: TestimonialC
           ))}
         </div>
         <button
-          aria-label="Next testimonial"
+          aria-label={a11y.nextTestimonial}
           onClick={scrollNext}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-primary transition-colors hover:border-primary hover:bg-primary hover:text-white"
         >

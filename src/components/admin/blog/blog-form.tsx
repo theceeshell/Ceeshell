@@ -265,7 +265,7 @@ export function BlogForm({ post, categories }: BlogFormProps) {
 
       <SectionCard title="Publishing">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField label="Publish Date" htmlFor="publishDate" error={errors.publishDate?.message}>
+          <FormField label="Publish Date" htmlFor="publishDate" error={errors.publishDate?.message} hint="Pick a future date to schedule the post — it goes live automatically on that day.">
             <Input id="publishDate" type="date" {...register("publishDate")} />
           </FormField>
 

@@ -19,14 +19,17 @@ interface HeroProps {
   secondaryButton?: HeroButton;
   /** general.heroScroll text. */
   scrollLabel: string;
+  /** accessibility.heroImageAlt / accessibility.heroScroll texts. */
+  imageAlt: string;
+  scrollAriaLabel: string;
 }
 
-export function Hero({ badge, heading, description, backgroundImageUrl, primaryButton, secondaryButton, scrollLabel }: HeroProps) {
+export function Hero({ badge, heading, description, backgroundImageUrl, primaryButton, secondaryButton, scrollLabel, imageAlt, scrollAriaLabel }: HeroProps) {
   return (
     <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-primary text-white">
       <Image
         src={backgroundImageUrl}
-        alt="Cee-Shell creative studio — branding, photography and packaging design at work"
+        alt={imageAlt}
         fill
         priority
         sizes="100vw"
@@ -73,7 +76,7 @@ export function Hero({ badge, heading, description, backgroundImageUrl, primaryB
 
       <Link
         href="#trusted-by"
-        aria-label="Scroll to explore"
+        aria-label={scrollAriaLabel}
         className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-white/60 transition-colors hover:text-white sm:flex"
       >
         <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em]">{scrollLabel}</span>

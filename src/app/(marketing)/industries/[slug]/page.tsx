@@ -14,6 +14,7 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/shared/reveal";
 import { ProjectCard } from "@/components/shared/project-card";
 import { CtaBanner, ctaProps } from "@/components/shared/cta-banner";
 import { toProjectCard } from "@/lib/cms/adapters";
+import { redirectIfMoved } from "@/lib/cms/redirects";
 
 export async function generateStaticParams() {
   const industries = await prisma.industry.findMany({ where: { visible: true }, select: { slug: true } });
@@ -42,7 +43,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function IndustryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const industry = await getIndustry(slug);
-  if (!industry) notFound();
+  if (!industry) {
+    await redirectIfMoved(`/industries/${slug}`);
+    notFound();
+  }
 
   const painPoints = industry.painPoints as string[];
   const solutions = industry.solutions as string[];

@@ -1,7 +1,8 @@
-import Script from "next/script";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { MotionProvider } from "@/components/shared/motion-provider";
+import { AnalyticsConsent } from "@/components/shared/analytics-consent";
+import { SiteTextsProvider } from "@/components/shared/site-texts-provider";
 import { WhatsAppButton, whatsappDigits } from "@/components/shared/whatsapp-button";
 import { getSiteSettings, getFooterConfig, getNavigationItems, getSiteTexts } from "@/lib/cms/site-data";
 import { jsonLd } from "@/lib/cms/html";
@@ -43,58 +44,53 @@ export default async function MarketingLayout({ children }: { children: React.Re
 
   return (
     <MotionProvider>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd) }}
-      />
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
-      >
-        Skip to content
-      </a>
-      <Navbar
-        websiteName={settings.websiteName}
-        navItems={navItems}
-        email={settings.email}
-        phone={settings.phone}
-        logoUrl={settings.logoUrl}
-        texts={texts.header}
-      />
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
-      <Footer
-        websiteName={settings.websiteName}
-        description={footer.description}
-        socialLinks={settings.socialLinks}
-        quickLinks={footer.quickLinks}
-        serviceLinks={footer.serviceLinks}
-        copyrightText={footer.copyrightText}
-        privacyPolicyHref={footer.privacyPolicyHref}
-        termsHref={footer.termsHref}
-        logoUrl={settings.footerLogoUrl ?? settings.logoUrl}
-        texts={texts.footer}
-        newsletterTexts={texts.newsletter}
-      />
-      {showWhatsApp && (
-        <WhatsAppButton
-          phone={settings.whatsapp}
-          label={texts.general.whatsappLabel}
-          message={texts.general.whatsappMessage}
+      <SiteTextsProvider value={{ errorPage: texts.errorPage, accessibility: texts.accessibility }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd) }}
         />
-      )}
-      {analyticsId && (
-        <>
-          <Script src={`https://www.googletagmanager.com/gtag/js?id=${analyticsId}`} strategy="afterInteractive" />
-          <Script id="google-analytics" strategy="afterInteractive">
-            {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${analyticsId}');`}
-          </Script>
-        </>
-      )}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
+        >
+          {texts.accessibility.skipToContent}
+        </a>
+        <Navbar
+          websiteName={settings.websiteName}
+          navItems={navItems}
+          email={settings.email}
+          phone={settings.phone}
+          logoUrl={settings.logoUrl}
+          texts={texts.header}
+        />
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
+        <Footer
+          websiteName={settings.websiteName}
+          description={footer.description}
+          socialLinks={settings.socialLinks}
+          quickLinks={footer.quickLinks}
+          serviceLinks={footer.serviceLinks}
+          copyrightText={footer.copyrightText}
+          privacyPolicyHref={footer.privacyPolicyHref}
+          termsHref={footer.termsHref}
+          logoUrl={settings.footerLogoUrl ?? settings.logoUrl}
+          texts={texts.footer}
+          newsletterTexts={texts.newsletter}
+          cookieSettingsLabel={analyticsId ? texts.cookies.settingsLink : undefined}
+        />
+        {showWhatsApp && (
+          <WhatsAppButton
+            phone={settings.whatsapp}
+            label={texts.general.whatsappLabel}
+            message={texts.general.whatsappMessage}
+          />
+        )}
+        {analyticsId && (
+          <AnalyticsConsent gaId={analyticsId} texts={texts.cookies} privacyHref={footer.privacyPolicyHref} />
+        )}
+      </SiteTextsProvider>
     </MotionProvider>
   );
 }

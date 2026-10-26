@@ -5,6 +5,7 @@ import { getPageWithSections } from "@/lib/cms/resolve-section";
 import { pageMetadata } from "@/lib/cms/metadata";
 import { isSystemPage, SYSTEM_PAGE_SLUGS } from "@/lib/cms/pages";
 import { SectionRenderer } from "@/components/cms/section-renderer";
+import { redirectIfMoved } from "@/lib/cms/redirects";
 
 /** Custom pages created in Admin -> Pages (privacy policy, terms, landing pages...). */
 export async function generateStaticParams() {
@@ -29,7 +30,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function CustomPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const page = await getCustomPage(slug);
-  if (!page) notFound();
+  if (!page) {
+    await redirectIfMoved(`/${slug}`);
+    notFound();
+  }
 
   return (
     <>

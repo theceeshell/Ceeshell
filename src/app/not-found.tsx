@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { StatusMessage } from "@/components/shared/status-message";
 import { getSiteTexts } from "@/lib/cms/site-data";
 
-export const metadata: Metadata = { title: "Page not found", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { notFound: t } = await getSiteTexts();
+  return { title: t.pageTitle, robots: { index: false } };
+}
 
 /** Unmatched URLs render outside the marketing layout, so this one has no navbar/footer. */
 export default async function NotFound() {

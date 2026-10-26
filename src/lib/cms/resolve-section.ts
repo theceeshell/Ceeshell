@@ -3,6 +3,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getSiteSettings } from "@/lib/cms/site-data";
 import type { SectionType } from "@/lib/cms/section-types";
+import { livePostFilter } from "@/lib/cms/blog";
 
 function byIdOrder<T extends { id: string }>(rows: T[], ids: string[]): T[] {
   const map = new Map(rows.map((r) => [r.id, r]));
@@ -126,8 +127,8 @@ export async function resolveSectionContent(section: {
       const ids = (content.postIds as string[]) ?? [];
       const rows =
         ids.length > 0
-          ? byIdOrder(await prisma.blogPost.findMany({ where: { id: { in: ids }, status: "published" } }), ids)
-          : await prisma.blogPost.findMany({ where: { status: "published" }, orderBy: { publishDate: "desc" } });
+          ? byIdOrder(await prisma.blogPost.findMany({ where: { id: { in: ids }, ...livePostFilter() } }), ids)
+          : await prisma.blogPost.findMany({ where: livePostFilter(), orderBy: { publishDate: "desc" } });
       return { ...content, posts: rows };
     }
 

@@ -29,9 +29,11 @@ interface ContactBlockProps {
   industries: ContactFormOption[];
   services: ContactFormOption[];
   texts: { contactInfo: SiteTexts["contactInfo"]; contactForm: SiteTexts["contactForm"] };
+  /** accessibility.mapTitle text (read aloud for the map). */
+  mapTitle: string;
 }
 
-export function ContactBlock({ heading, description, showMap, faqs, siteSettings, industries, services, texts }: ContactBlockProps) {
+export function ContactBlock({ heading, description, showMap, faqs, siteSettings, industries, services, texts, mapTitle }: ContactBlockProps) {
   const t = texts.contactInfo;
   return (
     <>
@@ -74,7 +76,7 @@ export function ContactBlock({ heading, description, showMap, faqs, siteSettings
             {showMap && (
               <div className="overflow-hidden rounded-[1.75rem] border border-border shadow-soft">
                 <iframe
-                  title="Cee-Shell studio location"
+                  title={mapTitle}
                   src={siteSettings.googleMapsUrl}
                   loading="lazy"
                   className="h-72 w-full grayscale-[40%]"

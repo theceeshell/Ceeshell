@@ -1,14 +1,16 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Download, Trash2 } from "lucide-react";
+import { CheckCircle2, Download, Loader2, Send, Trash2, UploadCloud } from "lucide-react";
 import { format } from "date-fns";
 import { DataTable, type DataTableColumn } from "@/components/admin/ui/data-table";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
-import { deleteSubscriberAction } from "@/lib/actions/newsletter-actions";
+import { deleteSubscriberAction, syncSubscribersToBrevoAction } from "@/lib/actions/newsletter-actions";
 import { formatDate } from "@/lib/format-date";
 
 export interface SubscriberRow {
@@ -27,8 +29,30 @@ function downloadCsv(rows: SubscriberRow[]) {
   URL.revokeObjectURL(url);
 }
 
-export function SubscriberManager({ subscribers }: { subscribers: SubscriberRow[] }) {
+export function SubscriberManager({
+  subscribers,
+  brevoConnected,
+  canSend,
+}: {
+  subscribers: SubscriberRow[];
+  brevoConnected: boolean;
+  canSend: boolean;
+}) {
   const router = useRouter();
+  const [syncing, setSyncing] = React.useState(false);
+
+  async function sync() {
+    setSyncing(true);
+    try {
+      const result = await syncSubscribersToBrevoAction();
+      if ("error" in result) toast.error(result.error);
+      else toast.success(`${result.count} subscriber${result.count === 1 ? "" : "s"} sent to Brevo. It may take a minute to show there.`);
+    } catch {
+      toast.error("Something went wrong — please try again.");
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const columns: DataTableColumn<SubscriberRow>[] = [
     {
@@ -47,10 +71,33 @@ export function SubscriberManager({ subscribers }: { subscribers: SubscriberRow[
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
-        <Button size="sm" variant="secondary" onClick={() => downloadCsv(subscribers)} disabled={subscribers.length === 0}>
-          <Download className="h-4 w-4" /> Export CSV
-        </Button>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex items-center gap-2 text-sm text-muted">
+          {brevoConnected ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-green-600" /> Connected to Brevo — new subscribers are added automatically.
+            </>
+          ) : (
+            "Newsletter sending isn't connected yet."
+          )}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="secondary" onClick={() => downloadCsv(subscribers)} disabled={subscribers.length === 0}>
+            <Download className="h-4 w-4" /> Export CSV
+          </Button>
+          {canSend && brevoConnected && (
+            <Button size="sm" variant="secondary" onClick={sync} disabled={syncing || subscribers.length === 0} title="Copy everyone who subscribed before Brevo was connected">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />} Sync to Brevo
+            </Button>
+          )}
+          {canSend && (
+            <Button size="sm" asChild>
+              <Link href="/admin/subscribers/send">
+                <Send className="h-4 w-4" /> Write a newsletter
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <DataTable

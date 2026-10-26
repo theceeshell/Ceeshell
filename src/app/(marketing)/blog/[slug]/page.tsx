@@ -15,14 +15,16 @@ import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/shared/reveal";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
 import { formatDate } from "@/lib/format-date";
+import { livePostFilter } from "@/lib/cms/blog";
+import { redirectIfMoved } from "@/lib/cms/redirects";
 
 export async function generateStaticParams() {
-  const posts = await prisma.blogPost.findMany({ where: { status: "published" }, select: { slug: true } });
+  const posts = await prisma.blogPost.findMany({ where: livePostFilter(), select: { slug: true } });
   return posts.map((post) => ({ slug: post.slug }));
 }
 
 /** Drafts are treated exactly like missing posts. */
-const getPublishedPost = cache((slug: string) => prisma.blogPost.findFirst({ where: { slug, status: "published" } }));
+const getPublishedPost = cache((slug: string) => prisma.blogPost.findFirst({ where: { slug, ...livePostFilter() } }));
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -40,17 +42,20 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPublishedPost(slug);
-  if (!post) notFound();
+  if (!post) {
+    await redirectIfMoved(`/blog/${slug}`);
+    notFound();
+  }
 
   const [settings, texts] = await Promise.all([getSiteSettings(), getSiteTexts()]);
 
   const relatedRows = await prisma.blogPost.findMany({
-    where: { status: "published", category: post.category, slug: { not: post.slug } },
+    where: { ...livePostFilter(), category: post.category, slug: { not: post.slug } },
     take: 3,
     orderBy: { publishDate: "desc" },
   });
   const related = relatedRows.length > 0 ? relatedRows : await prisma.blogPost.findMany({
-    where: { status: "published", slug: { not: post.slug } },
+    where: { ...livePostFilter(), slug: { not: post.slug } },
     take: 3,
     orderBy: { publishDate: "desc" },
   });
@@ -109,7 +114,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <Container className="mx-auto max-w-3xl">
           <Reveal>
             <div
-              className="prose-cee-shell space-y-6 [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:text-primary sm:[&_h2]:text-3xl [&_p]:text-base [&_p]:leading-relaxed [&_p]:text-muted"
+              className="prose-cee-shell space-y-6 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-secondary [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:text-primary sm:[&_h2]:text-3xl [&_img]:my-10 [&_img]:block [&_img]:h-auto [&_img]:w-full [&_img]:rounded-2xl [&_p]:text-base [&_p]:leading-relaxed [&_p]:text-muted"
               dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.contentHtml) }}
             />
           </Reveal>

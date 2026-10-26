@@ -74,7 +74,13 @@ export function BlogManager({ posts }: { posts: BlogRow[] }) {
       key: "status",
       header: "Status",
       render: (row) => (
-        <StatusBadge label={row.status} tone={row.status === "published" ? "green" : "neutral"} />
+        row.status !== "published" ? (
+          <StatusBadge label="Draft" tone="neutral" />
+        ) : new Date(row.publishDate) > new Date() ? (
+          <StatusBadge label={`Scheduled · ${formatDate(row.publishDate)}`} tone="blue" />
+        ) : (
+          <StatusBadge label="Published" tone="green" />
+        )
       ),
     },
     {
@@ -102,7 +108,7 @@ export function BlogManager({ posts }: { posts: BlogRow[] }) {
       emptyMessage="No blog posts yet — add your first one."
       actions={(row) => (
         <div className="flex justify-end gap-1.5">
-          {row.status === "published" && (
+          {row.status === "published" && new Date(row.publishDate) <= new Date() && (
             <a
               aria-label="View on website"
               title="View on website"

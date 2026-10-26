@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
 import type { SiteTexts } from "@/lib/cms/site-texts";
+import { useA11yTexts } from "@/components/shared/site-texts-provider";
 
 export interface NavItem {
   label: string;
@@ -29,6 +30,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl, texts }: 
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
+  const a11y = useA11yTexts();
   const isCurrent = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   React.useEffect(() => {
@@ -104,7 +106,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl, texts }: 
           </div>
 
           <button
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? a11y.closeMenu : a11y.openMenu}
             aria-expanded={open}
             aria-controls="mobile-menu"
             onClick={() => setOpen((v) => !v)}
@@ -128,7 +130,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl, texts }: 
             id="mobile-menu"
             role="dialog"
             aria-modal="true"
-            aria-label="Site menu"
+            aria-label={a11y.siteMenu}
             className="fixed inset-0 z-40 flex flex-col justify-between bg-primary px-6 pb-10 pt-28 text-white sm:px-12"
           >
             <nav className="flex flex-col gap-1">

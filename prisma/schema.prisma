@@ -331,3 +331,12 @@ model RateLimit {
 
   @@index([resetAt])
 }
+
+/// Old web address -> new one, created automatically when a slug changes
+/// (and manageable in Admin -> Redirects). Looked up only on "not found".
+model Redirect {
+  id        String   @id @default(cuid())
+  from      String   @unique
+  to        String
+  createdAt DateTime @default(now())
+}

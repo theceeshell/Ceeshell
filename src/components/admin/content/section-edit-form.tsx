@@ -21,7 +21,7 @@ import {
 import { ImageField, GalleryField } from "@/components/admin/media/image-field";
 import { IconPicker } from "@/components/admin/ui/icon-picker";
 import { RichTextEditor } from "@/components/admin/blog/rich-text-editor";
-import type { SectionType } from "@/lib/cms/section-types";
+import { SECTION_SCHEMAS, type SectionType } from "@/lib/cms/section-types";
 import type { ReferenceOptions } from "@/lib/cms/reference-options";
 
 // Editor state for 17 different section shapes; validated against SECTION_SCHEMAS on submit.
@@ -78,6 +78,16 @@ interface SectionEditFormProps {
   submitLabel: string;
 }
 
+/** "cards.0.title: Too small…" -> "Cards › item 1 › title is required" */
+function describeIssue(issue: z.core.$ZodIssue) {
+  const where = issue.path
+    .map((part) => (typeof part === "number" ? `item ${part + 1}` : String(part).replace(/([A-Z])/g, " $1").toLowerCase()))
+    .join(" › ");
+  const required = issue.code === "too_small" || (issue.code === "invalid_type" && issue.input === undefined);
+  const label = where ? where.charAt(0).toUpperCase() + where.slice(1) : "This section";
+  return required ? `${label} is required` : `${label}: ${issue.message}`;
+}
+
 export function SectionEditForm({ type, initialContent, referenceOptions, onSubmit, onCancel, submitLabel }: SectionEditFormProps) {
   const [content, setContent] = React.useState<Content>(() => ({ ...defaultsFor(type), ...initialContent }));
   const [errors, setErrors] = React.useState<string[]>([]);
@@ -89,15 +99,22 @@ export function SectionEditForm({ type, initialContent, referenceOptions, onSubm
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Same rules the server applies, checked first so editors get readable messages.
+    const parsed = SECTION_SCHEMAS[type].safeParse(content);
+    if (!parsed.success) {
+      setErrors(parsed.error.issues.map(describeIssue));
+      return;
+    }
     setErrors([]);
     setPending(true);
     try {
       await onSubmit(content);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        setErrors(err.issues.map((i) => `${i.path.join(".") || "Field"}: ${i.message}`));
-      } else {
-        toast.error(err instanceof Error ? err.message : "Something went wrong");
+        setErrors(err.issues.map(describeIssue));
+      } else if (!(err instanceof Error && err.message === "Name required")) {
+        // Server error details are hidden in production, so don't show them.
+        toast.error("Couldn't save this section — please check the fields and try again.");
       }
     } finally {
       setPending(false);
@@ -488,8 +505,8 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
           <Field label="Text">
             <RichTextEditor
               initialHtml={content.html ?? ""}
-              // Store HTML only; an editor with no text is saved as "" so the "required" check catches it.
-              onChange={(_json, html) => set({ html: html.replace(/<[^>]+>/g, "").trim() ? html : "" })}
+              // Store HTML only; an editor with no text or images is saved as "" so the "required" check catches it.
+              onChange={(_json, html) => set({ html: html.replace(/<[^>]+>/g, "").trim() || /<img/i.test(html) ? html : "" })}
             />
           </Field>
         </>

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { recordMove } from "@/lib/cms/redirects";
 import { requireSession } from "@/lib/auth/require-session";
 import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { serviceSchema, type ServiceFormValues } from "@/lib/validators/service";
@@ -19,7 +20,13 @@ export async function createServiceAction(values: ServiceFormValues): Promise<Ac
 export async function updateServiceAction(id: string, values: ServiceFormValues): Promise<ActionResult> {
   await requireSession();
   const data = serviceSchema.parse(values);
-  const result = await withSlugCheck(() => prisma.service.update({ where: { id }, data }));
+  const result = await withSlugCheck(() =>
+    prisma.$transaction(async (tx) => {
+      const before = await tx.service.findUniqueOrThrow({ where: { id }, select: { slug: true } });
+      await tx.service.update({ where: { id }, data });
+      await recordMove(tx, `/services/${before.slug}`, `/services/${data.slug}`);
+    })
+  );
   if (!result) revalidateSite();
   return result;
 }

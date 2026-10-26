@@ -20,6 +20,7 @@ import {
   Type,
   UserCog,
   DatabaseBackup,
+  Signpost,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -68,6 +69,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
       { label: "Navigation", href: "/admin/navigation", icon: Compass, adminOnly: true },
       { label: "Footer", href: "/admin/footer", icon: PanelBottom, adminOnly: true },
       { label: "SEO", href: "/admin/seo", icon: Search, adminOnly: true },
+      { label: "Redirects", href: "/admin/redirects", icon: Signpost, adminOnly: true },
       { label: "Users", href: "/admin/users", icon: ShieldCheck, adminOnly: true },
       { label: "My Account", href: "/admin/account", icon: UserCog },
       { label: "Backup", href: "/admin/backup", icon: DatabaseBackup, adminOnly: true },

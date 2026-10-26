@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/shared/analytics-consent";
 import { InstagramIcon, LinkedInIcon, BehanceIcon } from "@/components/shared/social-icons";
 import { Logo } from "@/components/shared/logo";
 import { ShellMotif } from "@/components/shared/shell-motif";
@@ -19,6 +20,8 @@ interface FooterProps {
   copyrightText: string;
   privacyPolicyHref: string;
   termsHref: string;
+  /** Shown only when analytics (and so the cookie banner) is on. */
+  cookieSettingsLabel?: string;
   logoUrl?: string | null;
   texts: SiteTexts["footer"];
   newsletterTexts: SiteTexts["newsletter"];
@@ -33,6 +36,7 @@ export function Footer({
   copyrightText,
   privacyPolicyHref,
   termsHref,
+  cookieSettingsLabel,
   logoUrl,
   texts,
   newsletterTexts,
@@ -96,6 +100,7 @@ export function Footer({
             <Link href={termsHref} className="hover:text-white">
               {texts.termsLabel}
             </Link>
+            {cookieSettingsLabel && <CookieSettingsLink label={cookieSettingsLabel} className="hover:text-white" />}
           </div>
         </div>
       </div>

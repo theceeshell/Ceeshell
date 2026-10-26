@@ -14,6 +14,9 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
   - Pages (create, rename, SEO, delete custom pages) are served by the catch-all route `app/(marketing)/[slug]`. Main pages keep their own route files.
   - Fixed labels, buttons and option lists come from **Website Texts**. They're defined once in `src/lib/cms/site-texts.ts`; only overrides are stored, in `SiteSettings.texts`. To make a new label editable, add a field there and read it via `getSiteTexts()`.
   - Images are chosen with the Media Library picker (`ImageField` / `GalleryField`), icons with `IconPicker`, and links with `LinkPicker`.
+- **Redirects:** changing a slug records old → new in the `Redirect` table (`recordMove`), and menu/footer links follow. Public pages call `redirectIfMoved()` only right before showing "not found", so normal traffic never queries it.
+- **Scheduled posts:** a post is live when `status = published` and `publishDate <= now` (`livePostFilter()`). The daily cron refreshes the site when a scheduled post comes due.
+- **Analytics:** GA4 loads only after the visitor accepts the cookie banner (`analytics-consent.tsx`).
 - **Free-tier safety nets:**
   - A daily Vercel Cron (`/api/cron/keep-alive`) touches the database so Supabase doesn't pause the project.
   - Admin → **Backup** downloads all content as JSON, because the free plan has no downloadable backups.
@@ -36,6 +39,7 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
 | `SUPABASE_SECRET_KEY` | Vercel + local | Supabase secret key (server-only; never prefix with `NEXT_PUBLIC_`) |
 | `NEXT_PUBLIC_SITE_URL` | optional | Canonical site URL. Defaults to the Vercel production domain. Set it when a custom domain goes live. |
 | `RESEND_API_KEY`, `INQUIRY_NOTIFY_EMAIL`, `MAIL_FROM` | optional | Email notification for new inquiries |
+| `BREVO_API_KEY`, `BREVO_LIST_ID`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | optional | Newsletter sending (see `src/lib/brevo.ts`). Without them, sign-ups are only stored. |
 | `CRON_SECRET` | optional | If set, Vercel Cron sends it and `/api/cron/keep-alive` requires it |
 
 ## Development

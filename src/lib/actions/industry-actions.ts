@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { recordMove } from "@/lib/cms/redirects";
 import { requireSession } from "@/lib/auth/require-session";
 import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { industrySchema, type IndustryFormValues } from "@/lib/validators/industry";
@@ -31,9 +32,13 @@ export async function updateIndustryAction(id: string, values: IndustryFormValue
   await requireSession();
   const { data, projectIds } = toData(values);
   const result = await withSlugCheck(() =>
-    prisma.industry.update({
-      where: { id },
-      data: { ...data, relatedProjects: { set: projectIds.map((projectId) => ({ id: projectId })) } },
+    prisma.$transaction(async (tx) => {
+      const before = await tx.industry.findUniqueOrThrow({ where: { id }, select: { slug: true } });
+      await tx.industry.update({
+        where: { id },
+        data: { ...data, relatedProjects: { set: projectIds.map((projectId) => ({ id: projectId })) } },
+      });
+      await recordMove(tx, `/industries/${before.slug}`, `/industries/${data.slug}`);
     })
   );
   if (!result) revalidateSite();

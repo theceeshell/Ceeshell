@@ -3,19 +3,21 @@
 import { useEffect } from "react";
 import { StatusMessage } from "@/components/shared/status-message";
 import { Button } from "@/components/ui/button";
+import { useErrorTexts } from "@/components/shared/site-texts-provider";
 
 export default function MarketingError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+  const t = useErrorTexts();
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
     <StatusMessage
-      eyebrow="Something went wrong"
-      title="This page didn't load properly"
-      description="Please try again in a moment. If it keeps happening, get in touch and we'll sort it out."
+      eyebrow={t.eyebrow}
+      title={t.heading}
+      description={t.text}
     >
-      <Button onClick={() => retry()}>Try again</Button>
+      <Button onClick={() => retry()}>{t.retryButton}</Button>
     </StatusMessage>
   );
 }

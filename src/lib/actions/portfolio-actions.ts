@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { recordMove } from "@/lib/cms/redirects";
 import { requireSession } from "@/lib/auth/require-session";
 import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { portfolioProjectSchema, type PortfolioProjectFormValues } from "@/lib/validators/portfolio";
@@ -27,13 +28,17 @@ export async function updatePortfolioProjectAction(id: string, values: Portfolio
   await requireSession();
   const { industryIds, testimonialId, ...rest } = portfolioProjectSchema.parse(values);
   const result = await withSlugCheck(() =>
-    prisma.portfolioProject.update({
-      where: { id },
-      data: {
-        ...rest,
-        testimonialId: testimonialId || null,
-        industries: { set: industryIds.map((id) => ({ id })) },
-      },
+    prisma.$transaction(async (tx) => {
+      const before = await tx.portfolioProject.findUniqueOrThrow({ where: { id }, select: { slug: true } });
+      await tx.portfolioProject.update({
+        where: { id },
+        data: {
+          ...rest,
+          testimonialId: testimonialId || null,
+          industries: { set: industryIds.map((industryId) => ({ id: industryId })) },
+        },
+      });
+      await recordMove(tx, `/portfolio/${before.slug}`, `/portfolio/${rest.slug}`);
     })
   );
   if (!result) revalidateSite();

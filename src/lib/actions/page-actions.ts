@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { recordMove } from "@/lib/cms/redirects";
 import { requireAdmin } from "@/lib/auth/require-session";
 import { isUniqueViolation, revalidateSite, type ActionResult } from "@/lib/actions/helpers";
 import { isReservedSlug, isSystemPage, pagePath } from "@/lib/cms/pages";
@@ -58,10 +59,8 @@ export async function updatePageAction(id: string, values: PageFormValues): Prom
   try {
     await prisma.$transaction(async (tx) => {
       await tx.page.update({ where: { id }, data: { ...data, slug } });
-      if (slug !== page.slug) {
-        // Keep menu links pointing at the page.
-        await tx.navigationItem.updateMany({ where: { href: pagePath(page.slug) }, data: { href: pagePath(slug) } });
-      }
+      // Old links keep working and menu/footer links follow the page.
+      await recordMove(tx, pagePath(page.slug), pagePath(slug));
     });
   } catch (error) {
     if (isUniqueViolation(error)) return { error: SLUG_TAKEN };

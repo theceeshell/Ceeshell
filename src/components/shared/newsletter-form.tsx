@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { subscribeNewsletterAction, type NewsletterState } from "@/lib/actions/newsletter-actions";
 import { submitKeepingValues } from "@/lib/form-submit";
 import type { SiteTexts } from "@/lib/cms/site-texts";
+import { useA11yTexts } from "@/components/shared/site-texts-provider";
 
 const initialState: NewsletterState = {};
 
@@ -20,6 +21,7 @@ interface NewsletterFormProps {
 export function NewsletterForm({ dark = false, texts }: NewsletterFormProps) {
   const [state, formAction, isPending] = useActionState(subscribeNewsletterAction, initialState);
   const id = React.useId();
+  const a11y = useA11yTexts();
 
   if (state.success) {
     return (
@@ -37,7 +39,7 @@ export function NewsletterForm({ dark = false, texts }: NewsletterFormProps) {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <label htmlFor={id} className="sr-only">
-          Email address
+          {a11y.newsletterEmail}
         </label>
         <Input
           id={id}
