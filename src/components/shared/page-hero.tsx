@@ -1,4 +1,4 @@
-import Image from "@/components/ui/image";
+import { BackgroundMedia } from "@/components/shared/background-media";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,14 +38,9 @@ export function PageHero({
         size === "tall" ? "min-h-[92vh] pt-40 pb-24" : "min-h-[62vh] pt-40 pb-20"
       )}
     >
-      <Image
-        src={image}
-        alt=""
-        fill
-        priority={imagePriority}
-        sizes="100vw"
-        className="absolute inset-0 -z-10 object-cover"
-      />
+      <div className="absolute inset-0 -z-10">
+        <BackgroundMedia src={image} alt="" priority={imagePriority} />
+      </div>
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-primary via-primary/70 to-primary/30" />
 
       <Container className="relative">

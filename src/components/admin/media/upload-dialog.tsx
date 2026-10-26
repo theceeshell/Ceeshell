@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { ACCEPTED_IMAGE_TYPES, isAcceptedImage, uploadImage } from "@/components/admin/media/upload-client";
+import { ACCEPTED_IMAGE_TYPES, ACCEPTED_VIDEO_TYPES, isAcceptedImage, isAcceptedVideo, uploadMedia } from "@/components/admin/media/upload-client";
 
 interface UploadDialogProps {
   open: boolean;
@@ -46,14 +46,14 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     const accepted: File[] = [];
     const rejected: string[] = [];
     for (const file of incoming) {
-      if (isAcceptedImage(file)) {
+      if (isAcceptedImage(file) || isAcceptedVideo(file)) {
         accepted.push(file);
       } else {
         rejected.push(file.name);
       }
     }
     if (rejected.length > 0) {
-      toast.error(`Skipped (not a JPEG/PNG/WebP/GIF/AVIF image under 10 MB): ${rejected.join(", ")}`);
+      toast.error(`Skipped (not an image under 10 MB or an MP4/WebM/MOV video under 100 MB): ${rejected.join(", ")}`);
     }
     if (accepted.length > 0) {
       setFiles((prev) => [...prev, ...accepted]);
@@ -86,7 +86,7 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     try {
       const failed: File[] = [];
       for (const file of files) {
-        const result = await uploadImage(file, folder.trim() || "general");
+        const result = await uploadMedia(file, folder.trim() || "general");
         if ("error" in result) {
           failed.push(file);
           toast.error(result.error);
@@ -116,7 +116,7 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>Upload media</DialogTitle>
-          <DialogDescription>Add images to the library. They can be reused anywhere on the site.</DialogDescription>
+          <DialogDescription>Add images or videos to the library. They can be reused anywhere on the site.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -149,11 +149,11 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
             <p className="text-sm text-text">
               <span className="font-semibold text-primary">Click to browse</span> or drag and drop images here
             </p>
-            <p className="text-xs text-muted">JPEG, PNG, WebP, GIF or AVIF · up to 10 MB each</p>
+            <p className="text-xs text-muted">Images up to 10 MB · videos (MP4, WebM, MOV) up to 100 MB when Cloudinary is connected</p>
             <input
               ref={inputRef}
               type="file"
-              accept={ACCEPTED_IMAGE_TYPES.join(",")}
+              accept={[...ACCEPTED_IMAGE_TYPES, ...ACCEPTED_VIDEO_TYPES].join(",")}
               multiple
               className="hidden"
               onChange={(e) => {

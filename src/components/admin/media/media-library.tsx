@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { UploadDialog } from "@/components/admin/media/upload-dialog";
+import { MediaThumb } from "@/components/admin/media/image-field";
+import { isVideoUrl } from "@/lib/media";
 import { deleteMediaAction, updateMediaAltAction } from "@/lib/actions/media-actions";
 import { formatDate } from "@/lib/format-date";
 
@@ -102,8 +104,7 @@ export function MediaLibrary({ media, folders }: { media: MediaRow[]; folders: s
               onClick={() => setPreview(item)}
             >
               <div className="aspect-square w-full overflow-hidden bg-background">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.url} alt={item.alt || item.filename} className="aspect-square h-full w-full object-cover" />
+                <MediaThumb url={item.url} alt={item.alt || item.filename} />
               </div>
 
               <div className="absolute inset-0 flex flex-col items-end justify-start gap-1.5 bg-black/0 p-2 opacity-0 transition-all duration-200 group-hover:bg-black/35 group-hover:opacity-100">
@@ -191,8 +192,12 @@ function MediaPreviewDialog({ item, onOpenChange }: { item: MediaRow | null; onO
             </DialogHeader>
 
             <div className="overflow-hidden rounded-xl bg-background">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.url} alt={item.alt || item.filename} className="max-h-[50vh] w-full object-contain" />
+              {isVideoUrl(item.url) ? (
+                <video src={item.url} controls playsInline preload="metadata" className="max-h-[50vh] w-full" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- admin preview
+                <img src={item.url} alt={item.alt || item.filename} className="max-h-[50vh] w-full object-contain" />
+              )}
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">

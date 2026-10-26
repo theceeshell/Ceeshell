@@ -221,11 +221,12 @@ export function ServiceForm({ service }: ServiceFormProps) {
           name="heroImageUrl"
           render={({ field }) => (
             <ImageField
-              label="Main image"
+              label="Main photo or video"
               value={field.value}
               onChange={field.onChange}
               error={errors.heroImageUrl?.message}
-              hint="The large image at the top of the service page."
+              hint="The large background at the top of the service page."
+              allowVideo
             />
           )}
         />
@@ -343,11 +344,12 @@ export function ServiceForm({ service }: ServiceFormProps) {
           name="gallery"
           render={({ field }) => (
             <GalleryField
-              label="Images"
+              label="Photos & videos"
               values={field.value}
               onChange={field.onChange}
               error={errors.gallery?.message}
-              hint="Shown in this order. Use the arrows to rearrange."
+              hint="Shown in this order. Use the arrows to rearrange. Videos get a play button."
+              allowVideo
             />
           )}
         />

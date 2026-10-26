@@ -10,7 +10,7 @@ export const industrySchema = z.object({
     .min(1, "Web address is required")
     .regex(slugRegex, "Use lowercase letters, numbers and hyphens only, e.g. food-and-beverage"),
   summary: z.string().trim().min(1, "Summary is required").max(1000),
-  heroImageUrl: z.string().trim().min(1, "Choose a banner image"),
+  heroImageUrl: z.string().trim().min(1, "Choose a banner photo or video"),
   painPoints: z.array(z.string().trim().min(1).max(500)),
   solutions: z.array(z.string().trim().min(1).max(500)),
   projectIds: z.array(z.string()),

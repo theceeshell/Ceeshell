@@ -14,6 +14,7 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
   - Pages (create, rename, SEO, delete custom pages) are served by the catch-all route `app/(marketing)/[slug]`. Main pages keep their own route files.
   - Fixed labels, buttons and option lists come from **Website Texts**. They're defined once in `src/lib/cms/site-texts.ts`; only overrides are stored, in `SiteSettings.texts`. To make a new label editable, add a field there and read it via `getSiteTexts()`.
   - Images are chosen with the Media Library picker (`ImageField` / `GalleryField`), icons with `IconPicker`, and links with `LinkPicker`.
+- **Photos & videos:** media fields marked `allowVideo` (hero backgrounds, service media, galleries) accept an image or a video URL (`src/lib/media.ts` detects videos by extension or Cloudinary `/video/upload/`). Hero videos play muted on loop (poster frame for reduced-motion visitors); gallery videos get controls. Cloudinary URLs get `f_auto,q_auto` and a width cap automatically, and Cloudinary images bypass Vercel's image optimizer via a custom loader (`components/ui/image.tsx`).
 - **Redirects:** changing a slug records old → new in the `Redirect` table (`recordMove`), and menu/footer links follow. Public pages call `redirectIfMoved()` only right before showing "not found", so normal traffic never queries it.
 - **Scheduled posts:** a post is live when `status = published` and `publishDate <= now` (`livePostFilter()`). The daily cron refreshes the site when a scheduled post comes due.
 - **Analytics:** GA4 loads only after the visitor accepts the cookie banner (`analytics-consent.tsx`).
@@ -40,6 +41,7 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
 | `NEXT_PUBLIC_SITE_URL` | optional | Canonical site URL. Defaults to the Vercel production domain. Set it when a custom domain goes live. |
 | `RESEND_API_KEY`, `INQUIRY_NOTIFY_EMAIL`, `MAIL_FROM` | optional | Email notification for new inquiries |
 | `BREVO_API_KEY`, `BREVO_LIST_ID`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | optional | Newsletter sending (see `src/lib/brevo.ts`). Without them, sign-ups are only stored. |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | optional | Media Library uploads (images + videos) go to Cloudinary and are delivered optimized. Without them, images go to Supabase Storage and videos can only be added by link. |
 | `CRON_SECRET` | optional | If set, Vercel Cron sends it and `/api/cron/keep-alive` requires it |
 
 ## Development

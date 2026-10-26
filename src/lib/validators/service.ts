@@ -26,7 +26,7 @@ export const serviceSchema = z.object({
   icon: z.string().min(1, "Choose an icon"),
   tagline: z.string().min(1, "Tagline is required"),
   summary: z.string().min(1, "Summary is required"),
-  heroImageUrl: z.string().min(1, "Choose a main image"),
+  heroImageUrl: z.string().min(1, "Choose a main photo or video"),
   overview: z.array(z.string().min(1, "Paragraph can't be empty")).min(1, "Add at least one overview paragraph"),
   benefits: z.array(titleDescriptionSchema).min(1, "Add at least one benefit"),
   process: z.array(titleDescriptionSchema).min(1, "Add at least one process step"),

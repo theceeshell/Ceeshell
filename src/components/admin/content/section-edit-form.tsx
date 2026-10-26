@@ -168,9 +168,10 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
           <TextField label="Heading" value={content.heading} onChange={(v) => set({ heading: v })} />
           <TextAreaField label="Description" value={content.description ?? ""} onChange={(v) => set({ description: v })} />
           <ImageField
-            label="Background image"
+            label="Background photo or video"
             value={content.backgroundImageUrl}
             onChange={(v) => set({ backgroundImageUrl: v })}
+            allowVideo
           />
           <OptionalButtonField label="Primary Button" value={content.primaryButton} onChange={(v) => set({ primaryButton: v })} />
           <OptionalButtonField label="Secondary Button" value={content.secondaryButton} onChange={(v) => set({ secondaryButton: v })} />
@@ -247,10 +248,11 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
           <TextField label="Heading (optional)" value={content.heading ?? ""} onChange={(v) => set({ heading: v })} />
           <TextAreaField label="Description (optional)" value={content.description ?? ""} onChange={(v) => set({ description: v })} />
           <GalleryField
-            label="Images"
+            label="Photos & videos"
             values={content.images ?? []}
             onChange={(v) => set({ images: v })}
-            hint="Shown in this order. Use the arrows to rearrange."
+            hint="Shown in this order. Use the arrows to rearrange. Videos get a play button."
+            allowVideo
           />
         </>
       );

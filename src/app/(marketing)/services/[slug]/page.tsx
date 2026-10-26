@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import Image from "@/components/ui/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
@@ -9,6 +8,8 @@ import { pageMetadata } from "@/lib/cms/metadata";
 import { getSiteTexts } from "@/lib/cms/site-data";
 import { fill } from "@/lib/cms/site-texts";
 import { PageHero } from "@/components/shared/page-hero";
+import { GalleryMedia } from "@/components/shared/gallery-media";
+import { stillImageUrl } from "@/lib/media";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: service.seoTitle || service.name,
     description: service.seoDescription || service.summary,
     path: `/services/${service.slug}`,
-    image: service.heroImageUrl,
+    image: stillImageUrl(service.heroImageUrl),
   });
 }
 
@@ -143,12 +144,11 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             {gallery.map((src, i) => (
               <RevealItem key={i} className={i === 0 ? "col-span-2 row-span-2" : undefined}>
                 <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
-                  <Image
+                  <GalleryMedia
                     src={src}
                     alt={fill(t.galleryAlt, { service: service.name, number: i + 1 })}
-                    fill
                     sizes="(min-width: 1024px) 30vw, 45vw"
-                    className="object-cover transition-transform duration-700 hover:scale-105"
+                    className="transition-transform duration-700 hover:scale-105"
                   />
                 </div>
               </RevealItem>

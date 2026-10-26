@@ -99,7 +99,13 @@ export function IndustryForm({ industry, projects }: IndustryFormProps) {
           control={control}
           name="heroImageUrl"
           render={({ field }) => (
-            <ImageField label="Banner image" value={field.value} onChange={field.onChange} error={errors.heroImageUrl?.message} />
+            <ImageField
+              label="Banner photo or video"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.heroImageUrl?.message}
+              allowVideo
+            />
           )}
         />
         <Controller

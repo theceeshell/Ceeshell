@@ -1,4 +1,4 @@
-import Image from "@/components/ui/image";
+import { BackgroundMedia } from "@/components/shared/background-media";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ interface HeroProps {
   badge?: string;
   heading: string;
   description?: string;
+  /** Image or video URL. */
   backgroundImageUrl: string;
   primaryButton?: HeroButton;
   secondaryButton?: HeroButton;
@@ -27,14 +28,9 @@ interface HeroProps {
 export function Hero({ badge, heading, description, backgroundImageUrl, primaryButton, secondaryButton, scrollLabel, imageAlt, scrollAriaLabel }: HeroProps) {
   return (
     <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-primary text-white">
-      <Image
-        src={backgroundImageUrl}
-        alt={imageAlt}
-        fill
-        priority
-        sizes="100vw"
-        className="absolute inset-0 -z-10 object-cover"
-      />
+      <div className="absolute inset-0 -z-10">
+        <BackgroundMedia src={backgroundImageUrl} alt={imageAlt} priority />
+      </div>
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-primary via-primary/55 to-primary/20" />
 
       <Container className="relative flex flex-col gap-10 pb-24 pt-48 sm:pb-28">

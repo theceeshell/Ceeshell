@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "@/components/ui/image";
+import { StillMedia } from "@/components/shared/still-media";
 import { ArrowUpRight } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -34,12 +34,11 @@ export function IndustriesShowcase({
                 href={`/industries/${industry.slug}`}
                 className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-[1.5rem]"
               >
-                <Image
+                <StillMedia
                   src={industry.heroImageUrl}
                   alt={industry.name}
-                  fill
                   sizes="(min-width: 1024px) 33vw, 50vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="relative flex items-center justify-between gap-2 p-6">
