@@ -3,14 +3,14 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, Star, ArrowUp, ArrowDown } from "lucide-react";
 import { DataTable, type DataTableColumn } from "@/components/admin/ui/data-table";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { TestimonialFormDialog } from "@/components/admin/testimonials/testimonial-form-dialog";
-import { deleteTestimonialAction } from "@/lib/actions/testimonial-actions";
+import { deleteTestimonialAction, reorderTestimonialsAction } from "@/lib/actions/testimonial-actions";
 
 export interface TestimonialRow {
   id: string;
@@ -28,6 +28,19 @@ export function TestimonialManager({ testimonials }: { testimonials: Testimonial
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<TestimonialRow | null>(null);
+  const [pending, startTransition] = React.useTransition();
+
+  function move(row: TestimonialRow, direction: -1 | 1) {
+    const sorted = [...testimonials].sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex((t) => t.id === row.id);
+    const swapWith = index + direction;
+    if (swapWith < 0 || swapWith >= sorted.length) return;
+    [sorted[index], sorted[swapWith]] = [sorted[swapWith], sorted[index]];
+    startTransition(async () => {
+      await reorderTestimonialsAction(sorted.map((t) => t.id));
+      router.refresh();
+    });
+  }
 
   function openCreate() {
     setEditing(null);
@@ -68,6 +81,21 @@ export function TestimonialManager({ testimonials }: { testimonials: Testimonial
       key: "featured",
       header: "Featured",
       render: (row) => <StatusBadge label={row.featured ? "Featured" : "Standard"} tone={row.featured ? "blue" : "neutral"} />,
+    },
+    {
+      key: "order",
+      header: "Order",
+      className: "w-28",
+      render: (row) => (
+        <div className="flex items-center gap-1">
+          <button aria-label="Move up" disabled={pending} onClick={() => move(row, -1)} className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted hover:text-primary disabled:opacity-40">
+            <ArrowUp className="h-3.5 w-3.5" />
+          </button>
+          <button aria-label="Move down" disabled={pending} onClick={() => move(row, 1)} className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted hover:text-primary disabled:opacity-40">
+            <ArrowDown className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ),
     },
   ];
 

@@ -31,6 +31,7 @@ export const SECTION_TYPES = [
   { type: "contactBlock", label: "Contact Details + Form", description: "Business info, map and the project inquiry form." },
   { type: "industriesShowcase", label: "Industries Showcase", description: "A grid of selected industries." },
   { type: "blogShowcase", label: "Blog Showcase", description: "Featured article plus a searchable, filterable post grid." },
+  { type: "document", label: "Document", description: "A long formatted text, like a policy or terms page." },
 ] as const;
 
 export type SectionType = (typeof SECTION_TYPES)[number]["type"];
@@ -199,7 +200,16 @@ export const blogShowcaseSchema = z.object({
   postIds: z.array(z.string()).default([]),
 });
 
+export const documentSchema = z.object({
+  heading: z.string().min(1),
+  /** Small line under the heading, e.g. "Last updated: January 2026". */
+  intro: z.string().optional(),
+  /** Rich text from the editor; sanitized on save and on render. */
+  html: z.string().min(1),
+});
+
 export const SECTION_SCHEMAS = {
+  document: documentSchema,
   hero: heroSchema,
   richText: richTextSchema,
   imageGallery: z.object({

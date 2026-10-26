@@ -9,7 +9,7 @@ export interface ServiceCardData {
   icon: string;
 }
 
-export function ServiceCard({ service, index }: { service: ServiceCardData; index: number }) {
+export function ServiceCard({ service, index, linkLabel }: { service: ServiceCardData; index: number; linkLabel: string }) {
   const Icon = iconMap[service.icon];
   return (
     <Link
@@ -29,7 +29,7 @@ export function ServiceCard({ service, index }: { service: ServiceCardData; inde
       </div>
 
       <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-secondary">
-        <span>Explore service</span>
+        <span>{linkLabel}</span>
         <ArrowUpRight className="h-4 w-4 -translate-x-1 translate-y-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100" />
       </div>
     </Link>

@@ -5,9 +5,20 @@ import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth/require-session";
 import { revalidateSite } from "@/lib/actions/helpers";
 import { SECTION_SCHEMAS, SECTION_TYPES, type SectionType } from "@/lib/cms/section-types";
+import { sanitizeBlogHtml } from "@/lib/cms/html";
 
 const sectionTypeSchema = z.enum(SECTION_TYPES.map((s) => s.type) as [SectionType, ...SectionType[]]);
 const sectionNameSchema = z.string().trim().min(1, "Section name is required").max(120);
+
+/** Validates section content for its type; rich text (document sections) is sanitized like blog posts. */
+function parseContent(type: SectionType, content: unknown) {
+  const parsed = SECTION_SCHEMAS[type].parse(content);
+  if (type === "document") {
+    const doc = parsed as z.infer<(typeof SECTION_SCHEMAS)["document"]>;
+    return { ...doc, html: sanitizeBlogHtml(doc.html) };
+  }
+  return parsed;
+}
 
 export async function toggleSectionEnabledAction(id: string, enabled: boolean) {
   await requireSession();
@@ -25,7 +36,7 @@ export async function createSectionAction(pageSlug: string, type: SectionType, n
   await requireSession();
   const sectionType = sectionTypeSchema.parse(type);
   const sectionName = sectionNameSchema.parse(name);
-  const parsed = SECTION_SCHEMAS[sectionType].parse(content);
+  const parsed = parseContent(sectionType, content);
 
   const page = await prisma.page.findUnique({ where: { slug: pageSlug } });
   if (!page) throw new Error("Page not found");
@@ -42,7 +53,7 @@ export async function updateSectionAction(id: string, name: string, content: unk
   const section = await prisma.section.findUnique({ where: { id } });
   if (!section) throw new Error("Section not found");
 
-  const parsed = SECTION_SCHEMAS[sectionTypeSchema.parse(section.type)].parse(content);
+  const parsed = parseContent(sectionTypeSchema.parse(section.type), content);
   await prisma.section.update({ where: { id }, data: { name: sectionNameSchema.parse(name), content: parsed } });
   revalidateSite();
 }

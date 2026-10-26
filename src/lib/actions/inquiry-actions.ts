@@ -30,8 +30,9 @@ const inquirySchema = z.object({
   phone: optionalText(40),
   industry: optionalText(80),
   service: optionalText(80),
-  budget: optionalText(80),
-  timeline: optionalText(80),
+  // Choices are editable in Website Texts (up to 200 characters each).
+  budget: optionalText(200),
+  timeline: optionalText(200),
   message: z.string().trim().min(1, "Tell us a bit about your project").max(5000, "Please keep your message under 5,000 characters"),
 });
 

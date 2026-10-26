@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { PortfolioForm } from "@/components/admin/portfolio/portfolio-form";
+import { getSiteTexts } from "@/lib/cms/site-data";
 import type { PortfolioProjectRow } from "@/components/admin/portfolio/portfolio-manager";
 
 export const metadata = { title: "Edit Portfolio Project" };
@@ -9,10 +10,11 @@ export const metadata = { title: "Edit Portfolio Project" };
 export default async function EditPortfolioProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [project, industries, testimonials] = await Promise.all([
+  const [project, industries, testimonials, texts] = await Promise.all([
     prisma.portfolioProject.findUnique({ where: { id }, include: { industries: true } }),
     prisma.industry.findMany({ orderBy: { order: "asc" } }),
     prisma.testimonial.findMany({ orderBy: { order: "asc" } }),
+    getSiteTexts(),
   ]);
 
   if (!project) notFound();
@@ -41,6 +43,7 @@ export default async function EditPortfolioProjectPage({ params }: { params: Pro
     testimonialId: project.testimonialId,
     industryIds: project.industries.map((industry) => industry.id),
     featured: project.featured,
+    visible: project.visible,
     order: project.order,
     seoTitle: project.seoTitle,
     seoDescription: project.seoDescription,
@@ -53,6 +56,7 @@ export default async function EditPortfolioProjectPage({ params }: { params: Pro
         initialValues={row}
         industries={industries.map((industry) => ({ id: industry.id, name: industry.name }))}
         testimonials={testimonials.map((t) => ({ id: t.id, label: `${t.clientName} — ${t.company}` }))}
+        categories={texts.projectPage.categories}
       />
     </div>
   );

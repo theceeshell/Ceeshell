@@ -1,6 +1,7 @@
 import type { Faq, Industry, TeamMember } from "@/generated/prisma/client";
 import type { ResolvedSection } from "@/lib/cms/resolve-section";
 import { toProjectCard, toTestimonialCard, toServiceCard, toBlogCard } from "@/lib/cms/adapters";
+import { getSiteTexts } from "@/lib/cms/site-data";
 
 import { Hero } from "@/components/sections/home/hero";
 import { PageHero } from "@/components/shared/page-hero";
@@ -18,6 +19,7 @@ import { ContactBlock } from "@/components/shared/contact-block";
 import { IndustriesShowcase } from "@/components/shared/industries-showcase";
 import { BlogShowcase } from "@/components/shared/blog-showcase";
 import { ImageGallerySection } from "@/components/shared/image-gallery-section";
+import { DocumentSection } from "@/components/shared/document-section";
 import { PortfolioGrid } from "@/components/shared/portfolio-grid";
 import { CtaBanner } from "@/components/shared/cta-banner";
 import { Container } from "@/components/ui/container";
@@ -30,7 +32,13 @@ interface SectionRendererProps {
   breadcrumbLabel?: string;
 }
 
-export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererProps) {
+/**
+ * Server component. Fixed labels inside sections (form fields, filter buttons...)
+ * come from the editable site texts; getSiteTexts() is cached per render, so
+ * every section on a page shares one query.
+ */
+export async function SectionRenderer({ section, breadcrumbLabel }: SectionRendererProps) {
+  const texts = await getSiteTexts();
   // Content is validated against SECTION_SCHEMAS when saved and enriched by
   // resolveSectionContent(), so it's treated as trusted, loosely-typed JSON here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +47,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
   switch (section.type) {
     case "hero": {
       if (c.variant === "home") {
-        return <Hero badge={c.badge} heading={c.heading} description={c.description} backgroundImageUrl={c.backgroundImageUrl} primaryButton={c.primaryButton} secondaryButton={c.secondaryButton} />;
+        return <Hero badge={c.badge} heading={c.heading} description={c.description} backgroundImageUrl={c.backgroundImageUrl} primaryButton={c.primaryButton} secondaryButton={c.secondaryButton} scrollLabel={texts.general.heroScroll} />;
       }
       return (
         <PageHero
@@ -47,7 +55,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           title={c.heading}
           description={c.description}
           image={c.backgroundImageUrl}
-          breadcrumbs={breadcrumbLabel ? [{ label: breadcrumbLabel }] : undefined}
+          breadcrumbs={breadcrumbLabel ? { home: texts.breadcrumbs.home, trail: [{ label: breadcrumbLabel }] } : undefined}
           imagePriority
         />
       );
@@ -63,6 +71,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           heading={c.heading}
           description={c.description}
           services={(c.services ?? []).map(toServiceCard)}
+          cardLinkLabel={texts.servicePage.cardLink}
           viewAllLink={c.viewAllLink}
         />
       );
@@ -88,7 +97,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           <Section>
             <Container>
               {c.heading && <SectionHeading title={c.heading} description={c.description} className="mb-12 max-w-2xl" />}
-              <PortfolioGrid projects={projects} />
+              <PortfolioGrid projects={projects} allLabel={texts.projectPage.filterAll} emptyText={texts.projectPage.filterEmpty} />
             </Container>
           </Section>
         );
@@ -105,12 +114,12 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
     case "cta":
       return (
         <CtaBanner
-          title={c.heading}
-          description={c.description}
-          primaryLabel={c.primaryButton?.label}
-          primaryHref={c.primaryButton?.href}
-          secondaryLabel={c.secondaryButton?.label}
-          secondaryHref={c.secondaryButton?.href}
+          title={c.heading ?? texts.cta.heading}
+          description={c.description ?? texts.cta.text}
+          primaryLabel={c.primaryButton?.label ?? texts.cta.primaryLabel}
+          primaryHref={c.primaryButton?.href ?? texts.cta.primaryHref}
+          secondaryLabel={c.secondaryButton?.label ?? texts.cta.secondaryLabel}
+          secondaryHref={c.secondaryButton?.href ?? texts.cta.secondaryHref}
         />
       );
 
@@ -136,6 +145,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           heading={c.heading}
           faqs={((c.faqs ?? []) as Faq[]).map((f) => ({ id: f.id, question: f.question, answer: f.answer }))}
           layout={c.layout}
+          sidebar={texts.faq}
         />
       );
 
@@ -148,6 +158,9 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           showMap={c.showMap}
           faqs={((c.faqs ?? []) as Faq[]).map((f) => ({ id: f.id, question: f.question, answer: f.answer }))}
           siteSettings={c.siteSettings}
+          industries={c.industryOptions ?? []}
+          services={c.serviceOptions ?? []}
+          texts={{ contactInfo: texts.contactInfo, contactForm: texts.contactForm }}
         />
       );
 
@@ -162,7 +175,16 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
       );
 
     case "blogShowcase":
-      return <BlogShowcase heading={c.heading} posts={(c.posts ?? []).map(toBlogCard)} />;
+      return (
+        <BlogShowcase
+          heading={c.heading}
+          posts={(c.posts ?? []).map((post: Parameters<typeof toBlogCard>[0]) => toBlogCard(post, texts.blog.readTime))}
+          texts={texts.blog}
+        />
+      );
+
+    case "document":
+      return <DocumentSection heading={c.heading} intro={c.intro} html={c.html} />;
 
     case "imageGallery":
       return <ImageGallerySection heading={c.heading} description={c.description} images={c.images} />;

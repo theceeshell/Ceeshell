@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
   initialContentJson?: object | null;
+  /** Initial content as an HTML string; used when no JSON is given. */
+  initialHtml?: string;
   onChange: (json: object, html: string) => void;
 }
 
@@ -20,10 +22,10 @@ const EDITOR_CLASS = cn(
   "[&_p]:leading-relaxed"
 );
 
-export function RichTextEditor({ initialContentJson, onChange }: RichTextEditorProps) {
+export function RichTextEditor({ initialContentJson, initialHtml, onChange }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [StarterKit],
-    content: (initialContentJson as JSONContent) ?? "",
+    content: (initialContentJson as JSONContent) ?? initialHtml ?? "",
     immediatelyRender: false,
     editorProps: {
       attributes: {

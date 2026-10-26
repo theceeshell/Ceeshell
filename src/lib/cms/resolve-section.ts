@@ -22,6 +22,9 @@ export interface ResolvedSection {
  * spread into the matching section component's props. Sections with no
  * references (hero, richText, cards, stats, imageGallery, logoSlider,
  * timeline, cta) are returned unchanged.
+ *
+ * Services, projects and industries switched off in the admin (visible: false)
+ * are never returned, even when a section references them by id.
  */
 export async function resolveSectionContent(section: {
   type: string;
@@ -44,9 +47,9 @@ export async function resolveSectionContent(section: {
       const limit = content.limit as number | undefined;
       let rows;
       if (content.displayStyle === "filterable" || ids.length === 0) {
-        rows = await prisma.portfolioProject.findMany({ orderBy: { order: "asc" } });
+        rows = await prisma.portfolioProject.findMany({ where: { visible: true }, orderBy: { order: "asc" } });
       } else {
-        rows = byIdOrder(await prisma.portfolioProject.findMany({ where: { id: { in: ids } } }), ids);
+        rows = byIdOrder(await prisma.portfolioProject.findMany({ where: { id: { in: ids }, visible: true } }), ids);
       }
       return { ...content, projects: limit ? rows.slice(0, limit) : rows };
     }
@@ -55,8 +58,8 @@ export async function resolveSectionContent(section: {
       const ids = (content.serviceIds as string[]) ?? [];
       const rows =
         ids.length > 0
-          ? byIdOrder(await prisma.service.findMany({ where: { id: { in: ids } } }), ids)
-          : await prisma.service.findMany({ where: { featured: true }, orderBy: { order: "asc" } });
+          ? byIdOrder(await prisma.service.findMany({ where: { id: { in: ids }, visible: true } }), ids)
+          : await prisma.service.findMany({ where: { featured: true, visible: true }, orderBy: { order: "asc" } });
       return { ...content, services: rows };
     }
 
@@ -84,15 +87,19 @@ export async function resolveSectionContent(section: {
 
     case "contactBlock": {
       const ids = (content.faqIds as string[]) ?? [];
-      const [rows, settings] = await Promise.all([
+      const [rows, settings, industries, services] = await Promise.all([
         ids.length > 0
           ? byIdOrder(await prisma.faq.findMany({ where: { id: { in: ids } } }), ids)
           : prisma.faq.findMany({ orderBy: { order: "asc" }, take: 5 }),
         getSiteSettings().catch(() => null),
+        prisma.industry.findMany({ where: { visible: true }, orderBy: { order: "asc" }, select: { slug: true, name: true } }),
+        prisma.service.findMany({ where: { visible: true }, orderBy: { order: "asc" }, select: { slug: true, shortName: true } }),
       ]);
       return {
         ...content,
         faqs: rows,
+        industryOptions: industries.map((i) => ({ slug: i.slug, label: i.name })),
+        serviceOptions: services.map((s) => ({ slug: s.slug, label: s.shortName })),
         siteSettings: settings
           ? {
               email: settings.email,
@@ -110,8 +117,8 @@ export async function resolveSectionContent(section: {
       const ids = (content.industryIds as string[]) ?? [];
       const rows =
         ids.length > 0
-          ? byIdOrder(await prisma.industry.findMany({ where: { id: { in: ids } } }), ids)
-          : await prisma.industry.findMany({ orderBy: { order: "asc" } });
+          ? byIdOrder(await prisma.industry.findMany({ where: { id: { in: ids }, visible: true } }), ids)
+          : await prisma.industry.findMany({ where: { visible: true }, orderBy: { order: "asc" } });
       return { ...content, industries: rows };
     }
 

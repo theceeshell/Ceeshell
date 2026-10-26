@@ -13,26 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { createMediaUploadAction, finalizeMediaUploadAction } from "@/lib/actions/media-actions";
-
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-const MAX_BYTES = 10 * 1024 * 1024;
-
-/** Uploads one file straight to Storage via a signed URL, then registers it. Returns an error message or null. */
-async function uploadOne(file: File, folder: string): Promise<string | null> {
-  const ticket = await createMediaUploadAction({ filename: file.name, size: file.size, type: file.type, folder });
-  if ("error" in ticket) return ticket.error;
-
-  const res = await fetch(ticket.uploadUrl, {
-    method: "PUT",
-    headers: { "content-type": file.type, "x-upsert": "false" },
-    body: file,
-  });
-  if (!res.ok) return `${file.name}: upload failed (${res.status})`;
-
-  const result = await finalizeMediaUploadAction({ path: ticket.path, filename: file.name });
-  return result?.error ?? null;
-}
+import { ACCEPTED_IMAGE_TYPES, isAcceptedImage, uploadImage } from "@/components/admin/media/upload-client";
 
 interface UploadDialogProps {
   open: boolean;
@@ -65,7 +46,7 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     const accepted: File[] = [];
     const rejected: string[] = [];
     for (const file of incoming) {
-      if (ACCEPTED_TYPES.includes(file.type) && file.size <= MAX_BYTES) {
+      if (isAcceptedImage(file)) {
         accepted.push(file);
       } else {
         rejected.push(file.name);
@@ -105,10 +86,10 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     try {
       const failed: File[] = [];
       for (const file of files) {
-        const error = await uploadOne(file, folder.trim() || "general");
-        if (error) {
+        const result = await uploadImage(file, folder.trim() || "general");
+        if ("error" in result) {
           failed.push(file);
-          toast.error(error);
+          toast.error(result.error);
         }
       }
       const uploaded = files.length - failed.length;
@@ -172,7 +153,7 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
             <input
               ref={inputRef}
               type="file"
-              accept={ACCEPTED_TYPES.join(",")}
+              accept={ACCEPTED_IMAGE_TYPES.join(",")}
               multiple
               className="hidden"
               onChange={(e) => {

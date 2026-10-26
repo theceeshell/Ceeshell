@@ -5,7 +5,6 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth/require-session";
-import type { ActionResult } from "@/lib/actions/helpers";
 import { detectFileType } from "@/lib/file-type";
 import {
   MEDIA_BUCKET,
@@ -63,7 +62,9 @@ const finalizeSchema = z.object({
 });
 
 /** Step 2: verifies what actually landed in Storage, then records it in the library. */
-export async function finalizeMediaUploadAction(input: z.input<typeof finalizeSchema>): Promise<ActionResult> {
+export async function finalizeMediaUploadAction(
+  input: z.input<typeof finalizeSchema>
+): Promise<{ error: string } | { url: string }> {
   await requireSession();
   const { path, filename } = finalizeSchema.parse(input);
 
@@ -91,6 +92,17 @@ export async function finalizeMediaUploadAction(input: z.input<typeof finalizeSc
     },
   });
   revalidatePath("/admin/media");
+  return { url };
+}
+
+/** Library contents for the image picker used by every image field in the admin. */
+export async function listMediaAction() {
+  await requireSession();
+  return prisma.media.findMany({
+    where: { mimeType: { startsWith: "image/" } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, url: true, filename: true, alt: true, folder: true },
+  });
 }
 
 export async function deleteMediaAction(id: string) {

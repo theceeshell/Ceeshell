@@ -2,19 +2,6 @@ import { z } from "zod";
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** Fixed set the public portfolio filter UI matches against exactly. */
-export const PORTFOLIO_CATEGORIES = [
-  "Packaging",
-  "Photography",
-  "Brand Identity",
-  "Printing",
-  "Corporate",
-  "Food",
-  "Beauty",
-  "Fashion",
-  "Luxury",
-] as const;
-
 export const COVER_ASPECT_OPTIONS = ["portrait", "landscape", "square"] as const;
 
 /**
@@ -34,7 +21,7 @@ export const portfolioProjectSchema = z.object({
   categories: z.array(z.string()).min(1, "Select at least one category"),
   servicesUsed: z.array(z.string()),
   excerpt: z.string().min(1, "Excerpt is required"),
-  coverImageUrl: z.string().min(1, "Cover image URL is required"),
+  coverImageUrl: z.string().min(1, "Choose a cover image"),
   coverAspect: z.enum(COVER_ASPECT_OPTIONS),
   gallery: z.array(z.string()),
   challenge: z.string(),
@@ -48,6 +35,7 @@ export const portfolioProjectSchema = z.object({
   testimonialId: z.string().optional().nullable(),
   industryIds: z.array(z.string()),
   featured: z.boolean(),
+  visible: z.boolean(),
   seoTitle: z.string().optional().nullable(),
   seoDescription: z.string().optional().nullable(),
 });
@@ -55,15 +43,11 @@ export const portfolioProjectSchema = z.object({
 export type PortfolioProjectFormValues = z.infer<typeof portfolioProjectSchema>;
 
 /**
- * Shape used by the create/edit page form. `gallery` is modeled as an array
- * of objects (rather than an array of primitives) so it can be driven by
- * react-hook-form's useFieldArray, which requires object rows. It gets
- * flattened back into PortfolioProjectFormValues on submit before calling the
- * server action. `testimonialId` is always a plain string here (a "none"
- * sentinel stands in for null) so it can back a Radix Select.
+ * Shape used by the create/edit page form. `testimonialId` is always a plain
+ * string here (a "none" sentinel stands in for null) so it can back a Radix
+ * Select; it gets mapped back to null on submit.
  */
 export const portfolioFormSchema = portfolioProjectSchema.extend({
-  gallery: z.array(z.object({ url: z.string().min(1, "Image URL can't be empty") })),
   testimonialId: z.string(),
 });
 

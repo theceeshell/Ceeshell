@@ -19,7 +19,7 @@ export async function updateSiteSettingsAction(values: SiteSettingsFormValues) {
 
 export async function updateSeoSettingsAction(values: SeoSettingsFormValues) {
   await requireAdmin();
-  const data = seoSettingsSchema.parse(values);
-  await prisma.siteSettings.update({ where: { id: "singleton" }, data });
+  const { googleAnalyticsId, ...data } = seoSettingsSchema.parse(values);
+  await prisma.siteSettings.update({ where: { id: "singleton" }, data: { ...data, googleAnalyticsId: googleAnalyticsId || null } });
   revalidateSite();
 }

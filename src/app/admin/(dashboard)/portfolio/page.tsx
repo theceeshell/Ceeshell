@@ -34,6 +34,7 @@ export default async function AdminPortfolioPage() {
     testimonialId: project.testimonialId,
     industryIds: project.industries.map((industry) => industry.id),
     featured: project.featured,
+    visible: project.visible,
     order: project.order,
     seoTitle: project.seoTitle,
     seoDescription: project.seoDescription,

@@ -3,20 +3,20 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { FormField } from "@/components/admin/ui/form-field";
 import { TagInput } from "@/components/admin/ui/tag-input";
+import { GalleryField, ImageField } from "@/components/admin/media/image-field";
 import {
   portfolioFormSchema,
   type PortfolioFormShape,
-  PORTFOLIO_CATEGORIES,
   COVER_ASPECT_OPTIONS,
 } from "@/lib/validators/portfolio";
 import { createPortfolioProjectAction, updatePortfolioProjectAction } from "@/lib/actions/portfolio-actions";
@@ -26,6 +26,8 @@ interface PortfolioFormProps {
   initialValues?: PortfolioProjectRow | null;
   industries: { id: string; name: string }[];
   testimonials: { id: string; label: string }[];
+  /** Editor-managed category list (Website Texts -> Projects page). */
+  categories: string[];
 }
 
 function slugify(input: string) {
@@ -59,6 +61,7 @@ const emptyValues: PortfolioFormShape = {
   testimonialId: "none",
   industryIds: [],
   featured: false,
+  visible: true,
   seoTitle: "",
   seoDescription: "",
 };
@@ -76,7 +79,7 @@ function toFormShape(row: PortfolioProjectRow | null | undefined): PortfolioForm
     excerpt: row.excerpt,
     coverImageUrl: row.coverImageUrl,
     coverAspect: row.coverAspect as PortfolioFormShape["coverAspect"],
-    gallery: row.gallery.map((url) => ({ url })),
+    gallery: row.gallery,
     challenge: row.challenge,
     research: row.research,
     strategy: row.strategy,
@@ -88,12 +91,13 @@ function toFormShape(row: PortfolioProjectRow | null | undefined): PortfolioForm
     testimonialId: row.testimonialId ?? "none",
     industryIds: row.industryIds,
     featured: row.featured,
+    visible: row.visible,
     seoTitle: row.seoTitle ?? "",
     seoDescription: row.seoDescription ?? "",
   };
 }
 
-export function PortfolioForm({ initialValues, industries, testimonials }: PortfolioFormProps) {
+export function PortfolioForm({ initialValues, industries, testimonials, categories }: PortfolioFormProps) {
   const router = useRouter();
   const isEditing = Boolean(initialValues);
   const [slugTouched, setSlugTouched] = React.useState(isEditing);
@@ -109,8 +113,6 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
     defaultValues: toFormShape(initialValues),
   });
 
-  const galleryArray = useFieldArray({ control, name: "gallery" });
-
   const title = useWatch({ control, name: "title" });
   React.useEffect(() => {
     if (!slugTouched) {
@@ -120,6 +122,8 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
 
   const selectedCategories = useWatch({ control, name: "categories" });
   const selectedIndustryIds = useWatch({ control, name: "industryIds" });
+  // Keep showing categories a project already has, even if they were removed from the list.
+  const categoryOptions = [...categories, ...selectedCategories.filter((c) => !categories.includes(c))];
 
   function toggleCategory(category: string, checked: boolean) {
     const current = selectedCategories;
@@ -136,7 +140,6 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
   async function onSubmit(values: PortfolioFormShape) {
     const payload = {
       ...values,
-      gallery: values.gallery.map((item) => item.url).filter(Boolean),
       testimonialId: values.testimonialId === "none" ? null : values.testimonialId,
     };
     try {
@@ -196,9 +199,19 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
           <Textarea id="excerpt" rows={3} {...register("excerpt")} placeholder="A short summary of the project…" />
         </FormField>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField label="Cover Image URL" htmlFor="coverImageUrl" error={errors.coverImageUrl?.message}>
-            <Input id="coverImageUrl" {...register("coverImageUrl")} placeholder="https://…" />
-          </FormField>
+          <Controller
+            control={control}
+            name="coverImageUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Cover image"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.coverImageUrl?.message}
+                hint="Shown on the portfolio grid and at the top of the project page."
+              />
+            )}
+          />
           <FormField label="Cover Aspect" htmlFor="coverAspect" error={errors.coverAspect?.message}>
             <Controller
               control={control}
@@ -231,15 +244,26 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
             render={({ field }) => <Switch id="featured" checked={field.value} onCheckedChange={field.onChange} />}
           />
         </div>
+        <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">
+          <div>
+            <Label htmlFor="visible">Show on website</Label>
+            <p className="mt-0.5 text-xs text-muted">Turn off to hide it from the website without deleting it.</p>
+          </div>
+          <Controller
+            control={control}
+            name="visible"
+            render={({ field }) => <Switch id="visible" checked={field.value} onCheckedChange={field.onChange} />}
+          />
+        </div>
       </section>
 
       <section className="space-y-5 rounded-2xl border border-border bg-white p-6">
         <h3 className="font-heading text-lg font-medium text-primary">Categorization</h3>
         <div className="space-y-2">
           <Label>Categories</Label>
-          <p className="text-xs text-muted">The public portfolio filters match these exactly — pick from the fixed list.</p>
+          <p className="text-xs text-muted">Used by the filter buttons on the portfolio page. Edit the list in Website Texts.</p>
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-            {PORTFOLIO_CATEGORIES.map((category) => (
+            {categoryOptions.map((category) => (
               <label
                 key={category}
                 className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm text-text"
@@ -321,29 +345,19 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
 
       <section className="space-y-5 rounded-2xl border border-border bg-white p-6">
         <h3 className="font-heading text-lg font-medium text-primary">Gallery</h3>
-        <div className="space-y-3">
-          {galleryArray.fields.map((field, index) => (
-            <div key={field.id} className="flex items-start gap-2">
-              <div className="flex-1">
-                <Input {...register(`gallery.${index}.url` as const)} placeholder="https://…" />
-                {errors.gallery?.[index]?.url?.message && (
-                  <p className="mt-1.5 text-xs font-medium text-red-600">{errors.gallery[index]?.url?.message}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                aria-label="Remove image"
-                onClick={() => galleryArray.remove(index)}
-                className="flex h-[3.25rem] w-11 shrink-0 items-center justify-center rounded-xl border border-border text-muted hover:bg-red-50 hover:text-red-600"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <Button type="button" variant="secondary" size="sm" onClick={() => galleryArray.append({ url: "" })}>
-          <Plus className="h-4 w-4" /> Add Image
-        </Button>
+        <Controller
+          control={control}
+          name="gallery"
+          render={({ field }) => (
+            <GalleryField
+              label="Project images"
+              values={field.value}
+              onChange={field.onChange}
+              error={errors.gallery?.message}
+              hint="Shown on the project page in this order. Use the arrows to rearrange."
+            />
+          )}
+        />
       </section>
 
       <section className="space-y-5 rounded-2xl border border-border bg-white p-6">

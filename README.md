@@ -10,6 +10,13 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
 
 - Public pages are **statically rendered and cached (ISR)**. Saving anything in the admin calls `revalidateSite()`, which refreshes the cached pages, and there's also a daily time-based revalidation as a safety net. Public visitors almost never hit the database.
 - Page layouts are built from **sections** (`src/lib/cms/section-types.ts`). Services, projects, posts and similar items are separate tables that sections reference by id.
+- **Everything on the public site is editable in the admin:**
+  - Pages (create, rename, SEO, delete custom pages) are served by the catch-all route `app/(marketing)/[slug]`. Main pages keep their own route files.
+  - Fixed labels, buttons and option lists come from **Website Texts**. They're defined once in `src/lib/cms/site-texts.ts`; only overrides are stored, in `SiteSettings.texts`. To make a new label editable, add a field there and read it via `getSiteTexts()`.
+  - Images are chosen with the Media Library picker (`ImageField` / `GalleryField`), icons with `IconPicker`, and links with `LinkPicker`.
+- **Free-tier safety nets:**
+  - A daily Vercel Cron (`/api/cron/keep-alive`) touches the database so Supabase doesn't pause the project.
+  - Admin → **Backup** downloads all content as JSON, because the free plan has no downloadable backups.
 - **Uploads** go to Supabase Storage:
   - `media` is a public bucket for the Media Library. The browser uploads to it directly through a signed URL.
   - `inquiry-attachments` is a private bucket for contact-form files. Admins download them through short-lived signed URLs.
@@ -29,6 +36,7 @@ Marketing site for Cee-Shell (branding, packaging, photography, print, corporate
 | `SUPABASE_SECRET_KEY` | Vercel + local | Supabase secret key (server-only; never prefix with `NEXT_PUBLIC_`) |
 | `NEXT_PUBLIC_SITE_URL` | optional | Canonical site URL. Defaults to the Vercel production domain. Set it when a custom domain goes live. |
 | `RESEND_API_KEY`, `INQUIRY_NOTIFY_EMAIL`, `MAIL_FROM` | optional | Email notification for new inquiries |
+| `CRON_SECRET` | optional | If set, Vercel Cron sends it and `/api/cron/keep-alive` requires it |
 
 ## Development
 
@@ -51,6 +59,5 @@ npx prisma migrate deploy # apply pending migrations to the database in .env
 
 - **Vercel Hobby** is for non-commercial use only. Move to Pro once the site is used commercially.
   - Image optimization is limited to the hosts in `src/lib/image-hosts.ts`, serves WebP only and caches for 31 days. This keeps transformations within the quota.
-- **Supabase Free:** 500 MB database and 1 GB storage.
-  - The project **pauses after 7 days without activity**. Because pages are cached, visitors alone may not keep it awake.
-  - Open the admin panel at least weekly, or upgrade.
+- **Supabase Free:** 500 MB database, 1 GB storage, and no downloadable backups (use Admin → Backup monthly).
+  - Projects pause after 7 days without activity; the daily keep-alive cron prevents that.

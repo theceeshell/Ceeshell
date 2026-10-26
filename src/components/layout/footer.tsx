@@ -3,6 +3,7 @@ import { InstagramIcon, LinkedInIcon, BehanceIcon } from "@/components/shared/so
 import { Logo } from "@/components/shared/logo";
 import { ShellMotif } from "@/components/shared/shell-motif";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 interface FooterLink {
   label: string;
@@ -19,6 +20,8 @@ interface FooterProps {
   privacyPolicyHref: string;
   termsHref: string;
   logoUrl?: string | null;
+  texts: SiteTexts["footer"];
+  newsletterTexts: SiteTexts["newsletter"];
 }
 
 export function Footer({
@@ -31,6 +34,8 @@ export function Footer({
   privacyPolicyHref,
   termsHref,
   logoUrl,
+  texts,
+  newsletterTexts,
 }: FooterProps) {
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-primary text-white">
@@ -70,15 +75,15 @@ export function Footer({
             </div>
           </div>
 
-          <FooterColumn title="Studio" links={quickLinks} />
-          <FooterColumn title="Services" links={serviceLinks} />
+          <FooterColumn title={texts.linksColumnTitle} links={quickLinks} />
+          <FooterColumn title={texts.servicesColumnTitle} links={serviceLinks} />
 
           <div className="space-y-5">
-            <h3 className="font-heading text-lg font-medium text-white">Stay in the loop</h3>
+            <h3 className="font-heading text-lg font-medium text-white">{texts.newsletterHeading}</h3>
             <p className="text-sm leading-relaxed text-white/65">
-              Occasional notes on branding, packaging and photography. No spam, unsubscribe any time.
+              {texts.newsletterText}
             </p>
-            <NewsletterForm dark />
+            <NewsletterForm dark texts={newsletterTexts} />
           </div>
         </div>
 
@@ -86,10 +91,10 @@ export function Footer({
           <p>&copy; {new Date().getFullYear()} {copyrightText}</p>
           <div className="flex gap-6">
             <Link href={privacyPolicyHref} className="hover:text-white">
-              Privacy Policy
+              {texts.privacyLabel}
             </Link>
             <Link href={termsHref} className="hover:text-white">
-              Terms of Service
+              {texts.termsLabel}
             </Link>
           </div>
         </div>

@@ -26,6 +26,7 @@ export default async function AdminSeoPage() {
           robotsIndex: settings?.robotsIndex ?? true,
           robotsFollow: settings?.robotsFollow ?? true,
           googleVerification: settings?.googleVerification ?? "",
+          googleAnalyticsId: settings?.googleAnalyticsId ?? "",
         }}
       />
     </div>

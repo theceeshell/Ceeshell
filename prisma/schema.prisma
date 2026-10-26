@@ -59,6 +59,12 @@ model SiteSettings {
   robotsIndex           Boolean  @default(true)
   robotsFollow          Boolean  @default(true)
   googleVerification    String?
+  /// Google Analytics 4 measurement id (G-XXXXXXX); empty = no analytics script.
+  googleAnalyticsId     String?
+  /// Floating WhatsApp chat button (uses the whatsapp number above).
+  whatsappButton        Boolean  @default(false)
+  /// Editor overrides for fixed site labels, keyed by group/field (see src/lib/cms/site-texts.ts).
+  texts                 Json     @default("{}")
   updatedAt             DateTime @updatedAt
 }
 
@@ -152,6 +158,8 @@ model Service {
   faqs           Json
   order          Int      @default(0)
   featured       Boolean  @default(true)
+  /// false = hidden from the public site (kept in the admin).
+  visible        Boolean  @default(true)
   seoTitle       String?
   seoDescription String?
   createdAt      DateTime @default(now())
@@ -189,6 +197,8 @@ model PortfolioProject {
   industries     Industry[]   @relation("IndustryProjects")
   featured       Boolean      @default(false)
   order          Int          @default(0)
+  /// false = hidden from the public site (kept in the admin).
+  visible        Boolean      @default(true)
   seoTitle       String?
   seoDescription String?
   createdAt      DateTime     @default(now())
@@ -207,6 +217,11 @@ model Industry {
   solutions       Json
   relatedProjects PortfolioProject[] @relation("IndustryProjects")
   order           Int                @default(0)
+  visible         Boolean            @default(true)
+  seoTitle        String?
+  seoDescription  String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @default(now()) @updatedAt
 }
 
 model TeamMember {

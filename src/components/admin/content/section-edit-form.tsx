@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { DialogFooter, DialogClose } from "@/components/ui/dialog";
 import {
+  Field,
   TextField,
   TextAreaField,
   SwitchField,
@@ -17,10 +18,13 @@ import {
   ObjectArrayField,
   ReferencePickerField,
 } from "@/components/admin/content/field-editors";
+import { ImageField, GalleryField } from "@/components/admin/media/image-field";
+import { IconPicker } from "@/components/admin/ui/icon-picker";
+import { RichTextEditor } from "@/components/admin/blog/rich-text-editor";
 import type { SectionType } from "@/lib/cms/section-types";
 import type { ReferenceOptions } from "@/lib/cms/reference-options";
 
-// Editor state for 16 different section shapes; validated against SECTION_SCHEMAS on submit.
+// Editor state for 17 different section shapes; validated against SECTION_SCHEMAS on submit.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Content = Record<string, any>;
 
@@ -58,6 +62,8 @@ function defaultsFor(type: SectionType): Content {
       return { eyebrow: "", heading: "", description: "", industryIds: [] };
     case "blogShowcase":
       return { heading: "", postIds: [] };
+    case "document":
+      return { heading: "", intro: "", html: "" };
     default:
       return {};
   }
@@ -144,11 +150,10 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
           <TextField label="Badge / Eyebrow" value={content.badge ?? ""} onChange={(v) => set({ badge: v })} />
           <TextField label="Heading" value={content.heading} onChange={(v) => set({ heading: v })} />
           <TextAreaField label="Description" value={content.description ?? ""} onChange={(v) => set({ description: v })} />
-          <TextField
-            label="Background Image URL"
+          <ImageField
+            label="Background image"
             value={content.backgroundImageUrl}
             onChange={(v) => set({ backgroundImageUrl: v })}
-            hint="Paste a URL, or upload the image in Media Library and paste its URL here."
           />
           <OptionalButtonField label="Primary Button" value={content.primaryButton} onChange={(v) => set({ primaryButton: v })} />
           <OptionalButtonField label="Secondary Button" value={content.secondaryButton} onChange={(v) => set({ secondaryButton: v })} />
@@ -193,7 +198,7 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
                 onChange={(v) => set({ paragraphs: v })}
                 addLabel="Add Paragraph"
               />
-              <TextField label="Image URL" value={content.imageUrl ?? ""} onChange={(v) => set({ imageUrl: v })} />
+              <ImageField label="Image" value={content.imageUrl} onChange={(v) => set({ imageUrl: v })} />
               <SelectField
                 label="Image Side"
                 value={content.imageSide ?? "left"}
@@ -207,7 +212,7 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
             <>
               <TextField label="Heading" value={content.heading ?? ""} onChange={(v) => set({ heading: v })} />
               <TextAreaField label="Content" value={content.content ?? ""} onChange={(v) => set({ content: v })} rows={6} />
-              <TextField label="Image URL (optional)" value={content.imageUrl ?? ""} onChange={(v) => set({ imageUrl: v })} />
+              <ImageField label="Image (optional)" value={content.imageUrl} onChange={(v) => set({ imageUrl: v })} optional />
               <SelectField
                 label="Alignment"
                 value={content.alignment ?? "left"}
@@ -224,7 +229,12 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
         <>
           <TextField label="Heading (optional)" value={content.heading ?? ""} onChange={(v) => set({ heading: v })} />
           <TextAreaField label="Description (optional)" value={content.description ?? ""} onChange={(v) => set({ description: v })} />
-          <StringArrayField label="Images" values={content.images ?? []} onChange={(v) => set({ images: v })} placeholder="Image URL" addLabel="Add Image" />
+          <GalleryField
+            label="Images"
+            values={content.images ?? []}
+            onChange={(v) => set({ images: v })}
+            hint="Shown in this order. Use the arrows to rearrange."
+          />
         </>
       );
 
@@ -249,8 +259,13 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
           <TextAreaField label="Description" value={content.description ?? ""} onChange={(v) => set({ description: v })} />
           {content.style === "iconList" && (
             <>
-              <TextField label="Side Image URL" value={content.sideImageUrl ?? ""} onChange={(v) => set({ sideImageUrl: v })} />
-              <TextField label="Secondary Side Image URL (optional)" value={content.sideImageSecondaryUrl ?? ""} onChange={(v) => set({ sideImageSecondaryUrl: v })} />
+              <ImageField label="Side image" value={content.sideImageUrl} onChange={(v) => set({ sideImageUrl: v })} optional />
+              <ImageField
+                label="Second side image (optional)"
+                value={content.sideImageSecondaryUrl}
+                onChange={(v) => set({ sideImageSecondaryUrl: v })}
+                optional
+              />
             </>
           )}
           {content.style === "numbered" && (
@@ -267,12 +282,16 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
                 <Input value={item.title} onChange={(e) => update({ title: e.target.value })} placeholder="Title" />
                 <Textarea rows={2} value={item.description} onChange={(e) => update({ description: e.target.value })} placeholder="Description" />
                 {content.style === "default" && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input value={item.icon ?? ""} onChange={(e) => update({ icon: e.target.value })} placeholder="Icon (camera/layers/package/printer/gift)" />
-                    <Input value={item.imageUrl ?? ""} onChange={(e) => update({ imageUrl: e.target.value })} placeholder="Image URL" />
-                    <Input value={item.buttonLabel ?? ""} onChange={(e) => update({ buttonLabel: e.target.value })} placeholder="Button label" />
-                    <Input value={item.buttonHref ?? ""} onChange={(e) => update({ buttonHref: e.target.value })} placeholder="Button link" />
-                  </div>
+                  <>
+                    <Field label="Icon (optional)">
+                      <IconPicker value={item.icon} onChange={(v) => update({ icon: v })} optional />
+                    </Field>
+                    <ImageField label="Image (optional)" value={item.imageUrl} onChange={(v) => update({ imageUrl: v })} optional />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={item.buttonLabel ?? ""} onChange={(e) => update({ buttonLabel: e.target.value })} placeholder="Button label" />
+                      <Input value={item.buttonHref ?? ""} onChange={(e) => update({ buttonHref: e.target.value })} placeholder="Button link" />
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -453,6 +472,26 @@ function renderFields(type: SectionType, content: Content, set: (patch: Partial<
         <>
           <TextField label="Heading" value={content.heading} onChange={(v) => set({ heading: v })} />
           <ReferencePickerField label="Posts" hint="Leave empty to show every published post, most recent first." options={refs.posts} selectedIds={content.postIds ?? []} onChange={(v) => set({ postIds: v })} />
+        </>
+      );
+
+    case "document":
+      return (
+        <>
+          <TextField label="Heading" value={content.heading ?? ""} onChange={(v) => set({ heading: v })} />
+          <TextField
+            label="Small line under the heading (optional)"
+            value={content.intro ?? ""}
+            onChange={(v) => set({ intro: v })}
+            placeholder="Last updated: January 2026"
+          />
+          <Field label="Text">
+            <RichTextEditor
+              initialHtml={content.html ?? ""}
+              // Store HTML only; an editor with no text is saved as "" so the "required" check catches it.
+              onChange={(_json, html) => set({ html: html.replace(/<[^>]+>/g, "").trim() ? html : "" })}
+            />
+          </Field>
         </>
       );
 

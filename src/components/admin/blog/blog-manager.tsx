@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2, Copy, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Copy, Loader2, ExternalLink } from "lucide-react";
 import { DataTable, type DataTableColumn } from "@/components/admin/ui/data-table";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
@@ -101,6 +101,18 @@ export function BlogManager({ posts }: { posts: BlogRow[] }) {
       emptyMessage="No blog posts yet — add your first one."
       actions={(row) => (
         <div className="flex justify-end gap-1.5">
+          {row.status === "published" && (
+            <a
+              aria-label="View on website"
+              title="View on website"
+              href={`/blog/${row.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-primary"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
           <Link
             href={`/admin/blog/${row.id}`}
             aria-label="Edit"

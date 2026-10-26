@@ -25,6 +25,7 @@ export default async function AdminSettingsPage() {
           email: settings?.email ?? "",
           phone: settings?.phone ?? "",
           whatsapp: settings?.whatsapp ?? "",
+          whatsappButton: settings?.whatsappButton ?? false,
           address: settings?.address ?? "",
           businessHours: settings?.businessHours ?? "",
           googleMapsUrl: settings?.googleMapsUrl ?? "",

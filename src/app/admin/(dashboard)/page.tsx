@@ -7,6 +7,18 @@ import { StatCard } from "@/components/admin/ui/stat-card";
 
 export const metadata = { title: "Dashboard" };
 
+/** Plain-language answers to "where do I change…?" for non-technical editors. */
+const HELP_LINKS = [
+  { label: "Change text or images on a page", where: "Pages → open the page → edit a section", href: "/admin/content" },
+  { label: "Add a new page", where: "Pages → New Page", href: "/admin/content", adminOnly: true },
+  { label: "Add a project to the portfolio", where: "Portfolio → Add Project", href: "/admin/portfolio/new" },
+  { label: "Write a blog post", where: "Blog → New Post", href: "/admin/blog/new" },
+  { label: "Change phone, email, address or logo", where: "Website Settings", href: "/admin/settings", adminOnly: true },
+  { label: "Change a button or label (e.g. \"Start Project\")", where: "Website Texts — use the search box", href: "/admin/texts", adminOnly: true },
+  { label: "Change the menu at the top", where: "Navigation", href: "/admin/navigation", adminOnly: true },
+  { label: "Upload images", where: "Media Library — or the \"Choose image\" button on any form", href: "/admin/media" },
+];
+
 export default async function AdminDashboardPage() {
   const session = await getSession();
 
@@ -65,22 +77,26 @@ export default async function AdminDashboardPage() {
 
         <div className="rounded-2xl border border-border bg-white p-6">
           <h3 className="mb-5 flex items-center gap-2 font-heading text-lg font-medium text-primary">
-            <FileStack className="h-4 w-4" /> Quick Links
+            <FileStack className="h-4 w-4" /> How do I…?
           </h3>
           <ul className="space-y-1">
-            {[
-              { label: "Edit Home Page", href: "/admin/content/home" },
-              { label: "Add Portfolio Project", href: "/admin/portfolio/new" },
-              { label: "Write a Blog Post", href: "/admin/blog/new" },
-              { label: "Update Website Settings", href: "/admin/settings" },
-            ].map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className="block rounded-lg px-3 py-2.5 text-sm font-medium text-text hover:bg-background">
-                  {link.label}
+            {HELP_LINKS.filter((link) => !link.adminOnly || session?.role === "ADMIN").map((link) => (
+              <li key={link.href + link.label}>
+                <Link href={link.href} className="block rounded-lg px-3 py-2.5 hover:bg-background">
+                  <span className="block text-sm font-medium text-text">{link.label}</span>
+                  <span className="block text-xs text-muted">{link.where}</span>
                 </Link>
               </li>
             ))}
           </ul>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 block rounded-lg bg-background px-3 py-2.5 text-center text-sm font-semibold text-primary hover:bg-primary/8"
+          >
+            Open the website ↗
+          </a>
         </div>
       </div>
     </div>

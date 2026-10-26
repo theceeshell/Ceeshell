@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 export interface FaqItemData {
   id?: string;
@@ -18,9 +19,11 @@ interface FaqSectionProps {
   heading: string;
   faqs: FaqItemData[];
   layout?: "simple" | "sidebarCta";
+  /** "Still have questions?" box texts (faq.*), used by the sidebarCta layout. */
+  sidebar: SiteTexts["faq"];
 }
 
-export function FaqSection({ eyebrow, heading, faqs, layout = "simple" }: FaqSectionProps) {
+export function FaqSection({ eyebrow, heading, faqs, layout = "simple", sidebar }: FaqSectionProps) {
   if (layout === "sidebarCta") {
     return (
       <>
@@ -39,13 +42,13 @@ export function FaqSection({ eyebrow, heading, faqs, layout = "simple" }: FaqSec
 
             <div className="hidden lg:block">
               <div className="sticky top-32 rounded-[1.75rem] border border-border bg-surface p-8 shadow-soft">
-                <h3 className="font-heading text-2xl font-medium text-primary">Still have questions?</h3>
+                <h3 className="font-heading text-2xl font-medium text-primary">{sidebar.sidebarHeading}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted">
-                  Every project is different — the fastest way to get a real answer is to tell us about yours.
+                  {sidebar.sidebarText}
                 </p>
                 <Button asChild className="mt-6 w-full">
-                  <Link href="/contact">
-                    Start Your Project <ArrowRight className="h-4 w-4" />
+                  <Link href={sidebar.sidebarHref}>
+                    {sidebar.sidebarButton} <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </div>
@@ -53,12 +56,12 @@ export function FaqSection({ eyebrow, heading, faqs, layout = "simple" }: FaqSec
           </Container>
         </Section>
 
-        <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
+        <div data-mobile-cta className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
           <Link
-            href="/contact"
+            href={sidebar.sidebarHref}
             className="flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-sm font-semibold text-white shadow-lift"
           >
-            Start Your Project <ArrowRight className="h-4 w-4" />
+            {sidebar.sidebarButton} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </>

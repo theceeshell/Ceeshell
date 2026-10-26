@@ -21,12 +21,15 @@ import { FormField } from "@/components/admin/ui/form-field";
 import { navigationItemSchema, type NavigationItemFormValues } from "@/lib/validators/navigation";
 import { createNavigationItemAction, updateNavigationItemAction } from "@/lib/actions/navigation-actions";
 import type { NavigationItemRow } from "@/components/admin/navigation/navigation-manager";
+import { LinkPicker } from "@/components/admin/ui/link-picker";
+import type { LinkOption } from "@/lib/cms/link-options";
 
 interface NavigationFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialValues: NavigationItemRow | null;
   onSaved: () => void;
+  linkOptions: LinkOption[];
 }
 
 const emptyValues: NavigationItemFormValues = {
@@ -36,7 +39,7 @@ const emptyValues: NavigationItemFormValues = {
   visible: true,
 };
 
-export function NavigationFormDialog({ open, onOpenChange, initialValues, onSaved }: NavigationFormDialogProps) {
+export function NavigationFormDialog({ open, onOpenChange, initialValues, onSaved, linkOptions }: NavigationFormDialogProps) {
   const isEditing = Boolean(initialValues);
 
   const {
@@ -82,7 +85,7 @@ export function NavigationFormDialog({ open, onOpenChange, initialValues, onSave
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Nav Item" : "Add Nav Item"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Edit menu link" : "Add menu link"}</DialogTitle>
           <DialogDescription>This appears in the main site menu.</DialogDescription>
         </DialogHeader>
 
@@ -91,8 +94,15 @@ export function NavigationFormDialog({ open, onOpenChange, initialValues, onSave
             <Input id="label" {...register("label")} placeholder="About" />
           </FormField>
 
-          <FormField label="Link" htmlFor="href" error={errors.href?.message} hint="e.g. /about or https://example.com">
-            <Input id="href" {...register("href")} placeholder="/about" />
+          <FormField label="Links to" htmlFor="href" error={errors.href?.message}>
+            <Controller
+              control={control}
+              name="href"
+              render={({ field }) => (
+                // Remount per opened item so the picker re-derives "custom" mode from the value.
+                <LinkPicker key={initialValues?.id ?? "new"} id="href" value={field.value} onChange={field.onChange} options={linkOptions} />
+              )}
+            />
           </FormField>
 
           <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">

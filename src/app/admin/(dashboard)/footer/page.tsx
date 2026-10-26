@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { getLinkOptions } from "@/lib/cms/link-options";
 import { getSession } from "@/lib/auth/session";
 import { AccessDenied } from "@/components/admin/ui/access-denied";
 import { PageHeader } from "@/components/admin/ui/page-header";
@@ -13,12 +14,13 @@ export default async function AdminFooterPage() {
     return <AccessDenied title="Footer" description="Manage the footer content shown on every page." />;
   }
 
-  const footer = await prisma.footerConfig.findUnique({ where: { id: "singleton" } });
+  const [footer, linkOptions] = await Promise.all([prisma.footerConfig.findUnique({ where: { id: "singleton" } }), getLinkOptions()]);
 
   return (
     <div>
       <PageHeader title="Footer" description="Manage the footer content shown on every page." />
       <FooterConfigForm
+        linkOptions={linkOptions}
         initialValues={{
           description: footer?.description ?? "",
           copyrightText: footer?.copyrightText ?? "",

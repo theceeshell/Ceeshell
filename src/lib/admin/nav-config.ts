@@ -16,6 +16,10 @@ import {
   PanelBottom,
   Search,
   ShieldCheck,
+  Factory,
+  Type,
+  UserCog,
+  DatabaseBackup,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -38,9 +42,10 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: "Content",
     items: [
-      { label: "Content Manager", href: "/admin/content", icon: FileStack },
+      { label: "Pages", href: "/admin/content", icon: FileStack },
       { label: "Portfolio", href: "/admin/portfolio", icon: Briefcase },
       { label: "Services", href: "/admin/services", icon: Layers },
+      { label: "Industries", href: "/admin/industries", icon: Factory },
       { label: "Blog", href: "/admin/blog", icon: Newspaper },
       { label: "Testimonials", href: "/admin/testimonials", icon: Quote },
       { label: "Team", href: "/admin/team", icon: Users },
@@ -59,10 +64,13 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     label: "Configuration",
     items: [
       { label: "Website Settings", href: "/admin/settings", icon: Settings, adminOnly: true },
+      { label: "Website Texts", href: "/admin/texts", icon: Type, adminOnly: true },
       { label: "Navigation", href: "/admin/navigation", icon: Compass, adminOnly: true },
       { label: "Footer", href: "/admin/footer", icon: PanelBottom, adminOnly: true },
       { label: "SEO", href: "/admin/seo", icon: Search, adminOnly: true },
       { label: "Users", href: "/admin/users", icon: ShieldCheck, adminOnly: true },
+      { label: "My Account", href: "/admin/account", icon: UserCog },
+      { label: "Backup", href: "/admin/backup", icon: DatabaseBackup, adminOnly: true },
     ],
   },
 ];

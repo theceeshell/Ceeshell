@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { FormField } from "@/components/admin/ui/form-field";
+import { ImageField } from "@/components/admin/media/image-field";
 import { cn } from "@/lib/utils";
 import { testimonialSchema, type TestimonialFormValues } from "@/lib/validators/testimonial";
 import { createTestimonialAction, updateTestimonialAction } from "@/lib/actions/testimonial-actions";
@@ -112,9 +113,20 @@ export function TestimonialFormDialog({ open, onOpenChange, initialValues, onSav
             <Textarea id="review" rows={4} {...register("review")} placeholder="What the client said…" />
           </FormField>
 
-          <FormField label="Photo URL" htmlFor="photoUrl" error={errors.photoUrl?.message}>
-            <Input id="photoUrl" {...register("photoUrl")} placeholder="https://…" />
-          </FormField>
+          <Controller
+            control={control}
+            name="photoUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Photo (optional)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.photoUrl?.message}
+                aspect="square"
+                optional
+              />
+            )}
+          />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <FormField label="Rating" htmlFor="rating" error={errors.rating?.message}>

@@ -6,15 +6,22 @@ import Image from "@/components/ui/image";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BlogCardData } from "@/lib/cms/adapters";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
-export function BlogGrid({ posts }: { posts: BlogCardData[] }) {
+interface BlogGridProps {
+  posts: BlogCardData[];
+  texts: Pick<SiteTexts["blog"], "filterAll" | "searchPlaceholder" | "searchEmpty">;
+}
+
+export function BlogGrid({ posts, texts }: BlogGridProps) {
   const [query, setQuery] = React.useState("");
-  const [category, setCategory] = React.useState<string>("All");
+  // null = the "All" filter (kept separate from the label so a category can't collide with it).
+  const [category, setCategory] = React.useState<string | null>(null);
 
   const categories = React.useMemo(() => Array.from(new Set(posts.map((p) => p.category))), [posts]);
 
   const filtered = posts.filter((post) => {
-    const matchesCategory = category === "All" || post.category === category;
+    const matchesCategory = category === null || post.category === category;
     const matchesQuery =
       query.trim() === "" ||
       post.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -26,9 +33,9 @@ export function BlogGrid({ posts }: { posts: BlogCardData[] }) {
     <div>
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-3">
-          {["All", ...categories].map((c) => (
+          {[null, ...categories].map((c) => (
             <button
-              key={c}
+              key={c ?? "__all__"}
               onClick={() => setCategory(c)}
               className={cn(
                 "rounded-full border px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-300",
@@ -37,7 +44,7 @@ export function BlogGrid({ posts }: { posts: BlogCardData[] }) {
                   : "border-border bg-transparent text-muted hover:border-primary hover:text-primary"
               )}
             >
-              {c}
+              {c ?? texts.filterAll}
             </button>
           ))}
         </div>
@@ -48,8 +55,8 @@ export function BlogGrid({ posts }: { posts: BlogCardData[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search articles"
-            aria-label="Search articles"
+            placeholder={texts.searchPlaceholder}
+            aria-label={texts.searchPlaceholder}
             className="h-11 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm text-text placeholder:text-muted/70 focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
           />
         </div>
@@ -81,7 +88,7 @@ export function BlogGrid({ posts }: { posts: BlogCardData[] }) {
       </div>
 
       {filtered.length === 0 && (
-        <p className="mt-16 text-center text-muted">No articles match your search — try a different term or category.</p>
+        <p className="mt-16 text-center text-muted">{texts.searchEmpty}</p>
       )}
     </div>
   );

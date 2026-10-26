@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -13,9 +13,12 @@ import {
   type FooterConfigFormInput,
 } from "@/lib/validators/footer";
 import { updateFooterConfigAction } from "@/lib/actions/footer-actions";
+import { LinkPicker } from "@/components/admin/ui/link-picker";
+import type { LinkOption } from "@/lib/cms/link-options";
 
 interface FooterConfigFormProps {
   initialValues: FooterConfigFormValues;
+  linkOptions: LinkOption[];
 }
 
 type FooterForm = ReturnType<typeof useForm<FooterConfigFormInput, unknown, FooterConfigFormValues>>;
@@ -27,6 +30,7 @@ function LinkListSection({
   control,
   register,
   errors,
+  linkOptions,
 }: {
   title: string;
   description: string;
@@ -34,6 +38,7 @@ function LinkListSection({
   control: FooterForm["control"];
   register: FooterForm["register"];
   errors: FooterForm["formState"]["errors"];
+  linkOptions: LinkOption[];
 }) {
   const { fields, append, remove } = useFieldArray({ control, name });
 
@@ -61,7 +66,13 @@ function LinkListSection({
                 htmlFor={`${name}.${index}.href`}
                 error={errors[name]?.[index]?.href?.message}
               >
-                <Input id={`${name}.${index}.href`} {...register(`${name}.${index}.href` as const)} placeholder="/" />
+                <Controller
+                  control={control}
+                  name={`${name}.${index}.href` as const}
+                  render={({ field: hrefField }) => (
+                    <LinkPicker id={`${name}.${index}.href`} value={hrefField.value ?? ""} onChange={hrefField.onChange} options={linkOptions} />
+                  )}
+                />
               </FormField>
             </div>
             <button
@@ -83,7 +94,7 @@ function LinkListSection({
   );
 }
 
-export function FooterConfigForm({ initialValues }: FooterConfigFormProps) {
+export function FooterConfigForm({ initialValues, linkOptions }: FooterConfigFormProps) {
   const {
     register,
     handleSubmit,
@@ -114,11 +125,19 @@ export function FooterConfigForm({ initialValues }: FooterConfigFormProps) {
           <Input id="copyrightText" {...register("copyrightText")} placeholder="© 2026 Cee-Shell. All rights reserved." />
         </FormField>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <FormField label="Privacy Policy Link" htmlFor="privacyPolicyHref" error={errors.privacyPolicyHref?.message}>
-            <Input id="privacyPolicyHref" {...register("privacyPolicyHref")} placeholder="/privacy-policy" />
+          <FormField label="Privacy policy page" htmlFor="privacyPolicyHref" error={errors.privacyPolicyHref?.message}>
+            <Controller
+              control={control}
+              name="privacyPolicyHref"
+              render={({ field }) => <LinkPicker id="privacyPolicyHref" value={field.value} onChange={field.onChange} options={linkOptions} />}
+            />
           </FormField>
-          <FormField label="Terms Link" htmlFor="termsHref" error={errors.termsHref?.message}>
-            <Input id="termsHref" {...register("termsHref")} placeholder="/terms" />
+          <FormField label="Terms page" htmlFor="termsHref" error={errors.termsHref?.message}>
+            <Controller
+              control={control}
+              name="termsHref"
+              render={({ field }) => <LinkPicker id="termsHref" value={field.value} onChange={field.onChange} options={linkOptions} />}
+            />
           </FormField>
         </div>
       </section>
@@ -130,6 +149,7 @@ export function FooterConfigForm({ initialValues }: FooterConfigFormProps) {
         control={control}
         register={register}
         errors={errors}
+        linkOptions={linkOptions}
       />
 
       <LinkListSection
@@ -139,6 +159,7 @@ export function FooterConfigForm({ initialValues }: FooterConfigFormProps) {
         control={control}
         register={register}
         errors={errors}
+        linkOptions={linkOptions}
       />
 
       <div className="flex justify-end">

@@ -6,21 +6,24 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { pageMetadata } from "@/lib/cms/metadata";
+import { getSiteTexts } from "@/lib/cms/site-data";
+import { fill } from "@/lib/cms/site-texts";
 import { PageHero } from "@/components/shared/page-hero";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Reveal, RevealGroup, RevealItem } from "@/components/shared/reveal";
 import { iconMap } from "@/components/shared/icon-map";
-import { CtaBanner } from "@/components/shared/cta-banner";
+import { CtaBanner, ctaProps } from "@/components/shared/cta-banner";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 export async function generateStaticParams() {
-  const services = await prisma.service.findMany({ select: { slug: true } });
+  const services = await prisma.service.findMany({ where: { visible: true }, select: { slug: true } });
   return services.map((service) => ({ slug: service.slug }));
 }
 
-const getService = cache((slug: string) => prisma.service.findUnique({ where: { slug } }));
+/** Hidden services are treated exactly like missing ones. */
+const getService = cache((slug: string) => prisma.service.findFirst({ where: { slug, visible: true } }));
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -39,7 +42,11 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const service = await getService(slug);
   if (!service) notFound();
 
-  const otherServices = await prisma.service.findMany({ where: { slug: { not: service.slug } }, orderBy: { order: "asc" } });
+  const [otherServices, texts] = await Promise.all([
+    prisma.service.findMany({ where: { slug: { not: service.slug }, visible: true }, orderBy: { order: "asc" } }),
+    getSiteTexts(),
+  ]);
+  const t = texts.servicePage;
 
   const Icon = iconMap[service.icon];
   const overview = service.overview as string[];
@@ -52,11 +59,14 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <PageHero
-        eyebrow="Service"
+        eyebrow={t.eyebrow}
         title={service.name}
         description={service.tagline}
         image={service.heroImageUrl}
-        breadcrumbs={[{ label: "Services", href: "/services" }, { label: service.shortName }]}
+        breadcrumbs={{
+          home: texts.breadcrumbs.home,
+          trail: [{ label: texts.breadcrumbs.services, href: "/services" }, { label: service.shortName }],
+        }}
         imagePriority
       />
 
@@ -67,7 +77,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/8 text-primary">
               <Icon className="h-6 w-6" />
             </div>
-            <h2 className="mt-8 font-heading text-3xl font-medium text-primary sm:text-4xl">Overview</h2>
+            <h2 className="mt-8 font-heading text-3xl font-medium text-primary sm:text-4xl">{t.overviewHeading}</h2>
             <div className="mt-6 space-y-5 text-base leading-relaxed text-muted">
               {overview.map((paragraph, i) => (
                 <p key={i}>{paragraph}</p>
@@ -91,7 +101,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       {/* Sub-services */}
       <Section className="bg-surface">
         <Container>
-          <SectionHeading eyebrow="Capabilities" title={`What's included in ${service.shortName}`} className="max-w-2xl" />
+          <SectionHeading eyebrow={t.capabilitiesEyebrow} title={fill(t.capabilitiesHeading, { service: service.shortName })} className="max-w-2xl" />
           <RevealGroup className="mt-14 grid grid-cols-1 gap-px overflow-hidden rounded-[1.5rem] border border-border bg-border sm:grid-cols-2">
             {subServices.map((sub) => (
               <RevealItem key={sub.title}>
@@ -108,7 +118,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       {/* Process */}
       <Section>
         <Container>
-          <SectionHeading eyebrow="Our Process" title="How a project comes together" className="max-w-2xl" />
+          <SectionHeading eyebrow={t.processEyebrow} title={t.processHeading} className="max-w-2xl" />
           <div className="relative mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {process.map((step, i) => (
               <Reveal key={step.title} delay={i * 0.08} className="relative">
@@ -124,7 +134,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       {/* Gallery */}
       <Section className="bg-surface">
         <Container>
-          <SectionHeading eyebrow="Recent Work" title="A closer look at the standard" className="max-w-2xl" />
+          <SectionHeading eyebrow={t.workEyebrow} title={t.workHeading} className="max-w-2xl" />
           <RevealGroup className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3">
             {gallery.map((src, i) => (
               <RevealItem key={i} className={i === 0 ? "col-span-2 row-span-2" : undefined}>
@@ -146,7 +156,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       {/* FAQ */}
       <Section>
         <Container className="mx-auto max-w-3xl">
-          <SectionHeading eyebrow="FAQ" title="Common questions" align="center" className="mx-auto" />
+          <SectionHeading eyebrow={t.faqEyebrow} title={t.faqHeading} align="center" className="mx-auto" />
           <Reveal className="mt-12">
             <Accordion type="single" collapsible className="divide-y-0">
               {faqs.map((faq) => (
@@ -163,7 +173,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       {/* Other services */}
       <Section className="bg-surface">
         <Container>
-          <SectionHeading eyebrow="Explore More" title="Other services" className="max-w-2xl" />
+          <SectionHeading eyebrow={t.moreEyebrow} title={t.moreHeading} className="max-w-2xl" />
           <div className="mt-10 flex flex-wrap gap-4">
             {otherServices.map((s) => (
               <Link
@@ -180,8 +190,9 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       </Section>
 
       <CtaBanner
-        title={`Ready to start your ${service.shortName.toLowerCase()} project?`}
-        description="Tell us about your brand and timeline — we'll follow up with a tailored proposal within 3 business days."
+        {...ctaProps(texts.cta)}
+        title={fill(t.ctaHeading, { service: service.shortName.toLowerCase() })}
+        description={t.ctaText}
       />
     </>
   );

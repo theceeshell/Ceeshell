@@ -16,7 +16,8 @@ interface PageHeroProps {
   title: string;
   description?: string;
   image: string;
-  breadcrumbs?: Crumb[];
+  /** `home` is the label of the leading "Home" link (breadcrumbs.home text). */
+  breadcrumbs?: { home: string; trail: Crumb[] };
   size?: "default" | "tall";
   imagePriority?: boolean;
 }
@@ -50,8 +51,8 @@ export function PageHero({
       <Container className="relative">
         {breadcrumbs && (
           <nav aria-label="Breadcrumb" className="mb-6 flex flex-wrap items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-white/60">
-            <Link href="/" className="hover:text-white">Home</Link>
-            {breadcrumbs.map((crumb) => (
+            <Link href="/" className="hover:text-white">{breadcrumbs.home}</Link>
+            {breadcrumbs.trail.map((crumb) => (
               <span key={crumb.label} className="flex items-center gap-1.5">
                 <ChevronRight className="h-3 w-3" />
                 {crumb.href ? (

@@ -6,21 +6,24 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight, Quote } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { pageMetadata } from "@/lib/cms/metadata";
+import { getSiteTexts } from "@/lib/cms/site-data";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Badge } from "@/components/ui/badge";
 import { Reveal, RevealGroup, RevealItem } from "@/components/shared/reveal";
 import { ProjectCard } from "@/components/shared/project-card";
-import { CtaBanner } from "@/components/shared/cta-banner";
+import { CtaBanner, ctaProps } from "@/components/shared/cta-banner";
 import { toProjectCard } from "@/lib/cms/adapters";
 
 export async function generateStaticParams() {
-  const projects = await prisma.portfolioProject.findMany({ select: { slug: true } });
+  const projects = await prisma.portfolioProject.findMany({ where: { visible: true }, select: { slug: true } });
   return projects.map((project) => ({ slug: project.slug }));
 }
 
+/** Hidden projects are treated exactly like missing ones. */
 const getProject = cache((slug: string) =>
-  prisma.portfolioProject.findUnique({ where: { slug }, include: { testimonial: true } })
+  prisma.portfolioProject.findFirst({ where: { slug, visible: true }, include: { testimonial: true } })
 );
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -35,15 +38,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-function storyBlocks(project: { challenge: string; research: string; strategy: string; concept: string; designProcess: string; photography: string; printing: string }) {
+function storyBlocks(
+  project: { challenge: string; research: string; strategy: string; concept: string; designProcess: string; photography: string; printing: string },
+  t: SiteTexts["projectPage"]
+) {
   return [
-    { label: "Challenge", body: project.challenge },
-    { label: "Research", body: project.research },
-    { label: "Strategy", body: project.strategy },
-    { label: "Concept", body: project.concept },
-    { label: "Design Process", body: project.designProcess },
-    { label: "Photography", body: project.photography },
-    { label: "Printing", body: project.printing },
+    { label: t.challengeLabel, body: project.challenge },
+    { label: t.researchLabel, body: project.research },
+    { label: t.strategyLabel, body: project.strategy },
+    { label: t.conceptLabel, body: project.concept },
+    { label: t.designProcessLabel, body: project.designProcess },
+    { label: t.photographyLabel, body: project.photography },
+    { label: t.printingLabel, body: project.printing },
   ];
 }
 
@@ -57,10 +63,15 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   const gallery = project.gallery as string[];
   const deliverables = project.deliverables as string[];
 
-  const allProjects = await prisma.portfolioProject.findMany({
-    orderBy: { order: "asc" },
-    select: { slug: true, title: true, categories: true, coverImageUrl: true, coverAspect: true },
-  });
+  const [allProjects, texts] = await Promise.all([
+    prisma.portfolioProject.findMany({
+      where: { visible: true },
+      orderBy: { order: "asc" },
+      select: { slug: true, title: true, categories: true, coverImageUrl: true, coverAspect: true },
+    }),
+    getSiteTexts(),
+  ]);
+  const t = texts.projectPage;
   const relatedRaw = allProjects.filter(
     (p) => p.slug !== slug && (p.categories as string[]).some((c) => categories.includes(c))
   ).slice(0, 3);
@@ -77,9 +88,9 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-primary via-primary/65 to-primary/25" />
         <Container className="relative flex flex-col gap-6 pb-20 pt-40">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-white/60">
-            <Link href="/" className="hover:text-white">Home</Link>
+            <Link href="/" className="hover:text-white">{texts.breadcrumbs.home}</Link>
             <span>/</span>
-            <Link href="/portfolio" className="hover:text-white">Portfolio</Link>
+            <Link href="/portfolio" className="hover:text-white">{texts.breadcrumbs.portfolio}</Link>
             <span>/</span>
             <span className="text-white/85">{project.title}</span>
           </nav>
@@ -98,17 +109,17 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       {/* Meta bar */}
       <Section size="compact" className="border-b border-border bg-surface py-10 sm:py-12">
         <Container className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-          <Meta label="Client" value={project.client} />
-          <Meta label="Industry" value={project.industry} />
-          <Meta label="Year" value={project.year} />
-          <Meta label="Services" value={servicesUsed.join(", ")} />
+          <Meta label={t.clientLabel} value={project.client} />
+          <Meta label={t.industryLabel} value={project.industry} />
+          <Meta label={t.yearLabel} value={project.year} />
+          <Meta label={t.servicesLabel} value={servicesUsed.join(", ")} />
         </Container>
       </Section>
 
       {/* Story */}
       <Section>
         <Container className="mx-auto max-w-3xl space-y-16">
-          {storyBlocks(project).map((block, i) => (
+          {storyBlocks(project, t).map((block, i) => (
             <Reveal key={block.label} delay={i * 0.02}>
               <span className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">{block.label}</span>
               <p className="mt-4 text-balance font-heading text-2xl font-medium leading-snug text-primary sm:text-3xl">
@@ -122,7 +133,7 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
       {/* Deliverables */}
       <Section className="bg-surface">
         <Container>
-          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">Final Deliverables</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">{t.deliverablesHeading}</span>
           <div className="mt-8 flex flex-wrap gap-3">
             {deliverables.map((d) => (
               <span key={d} className="rounded-full border border-border bg-background px-5 py-2.5 text-sm font-medium text-primary">
@@ -177,9 +188,9 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         <Section>
           <Container>
             <div className="flex items-end justify-between">
-              <h2 className="font-heading text-3xl font-medium text-primary sm:text-4xl">Related Projects</h2>
+              <h2 className="font-heading text-3xl font-medium text-primary sm:text-4xl">{t.relatedHeading}</h2>
               <Link href="/portfolio" className="group hidden items-center gap-2 text-sm font-semibold text-primary sm:flex">
-                All Work
+                {t.allWorkLink}
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
               </Link>
             </div>
@@ -206,15 +217,15 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
         />
         <div className="absolute inset-0 -z-10 bg-primary/70" />
         <div className="flex flex-col items-center gap-4 text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Next Project</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">{t.nextLabel}</span>
           <span className="font-heading text-4xl font-medium sm:text-6xl">{nextProject.title}</span>
           <span className="flex items-center gap-2 text-sm font-semibold">
-            View Case Study <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            {t.viewCaseStudy} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </span>
         </div>
       </Link>
 
-      <CtaBanner />
+      <CtaBanner {...ctaProps(texts.cta)} />
     </>
   );
 }

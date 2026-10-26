@@ -8,6 +8,7 @@ import { Menu, X, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/shared/logo";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 export interface NavItem {
   label: string;
@@ -21,9 +22,10 @@ interface NavbarProps {
   email: string;
   phone: string;
   logoUrl?: string | null;
+  texts: SiteTexts["header"];
 }
 
-export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarProps) {
+export function Navbar({ websiteName, navItems, email, phone, logoUrl, texts }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
@@ -97,7 +99,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
 
           <div className="hidden lg:block">
             <Button asChild variant={solid ? "primary" : "light"} size="sm">
-              <Link href="/contact">Start Project</Link>
+              <Link href={texts.ctaHref}>{texts.ctaLabel}</Link>
             </Button>
           </div>
 
@@ -163,7 +165,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
                 <p>{phone}</p>
               </div>
               <Button asChild variant="light" size="lg" onClick={() => setOpen(false)}>
-                <Link href="/contact">Start Your Project</Link>
+                <Link href={texts.ctaHref}>{texts.mobileCtaLabel}</Link>
               </Button>
             </motion.div>
           </motion.div>

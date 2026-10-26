@@ -5,19 +5,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { ProjectCard, type ProjectCardData } from "@/components/shared/project-card";
 
-export function PortfolioGrid({ projects }: { projects: ProjectCardData[] }) {
-  const [active, setActive] = React.useState<string>("All");
+interface PortfolioGridProps {
+  projects: ProjectCardData[];
+  /** projectPage.filterAll / projectPage.filterEmpty texts. */
+  allLabel: string;
+  emptyText: string;
+}
+
+export function PortfolioGrid({ projects, allLabel, emptyText }: PortfolioGridProps) {
+  // null = the "All" filter (kept separate from the label so a category can't collide with it).
+  const [active, setActive] = React.useState<string | null>(null);
 
   const categories = React.useMemo(() => Array.from(new Set(projects.flatMap((p) => p.categories))).sort(), [projects]);
 
-  const filtered = active === "All" ? projects : projects.filter((p) => p.categories.includes(active));
+  const filtered = active === null ? projects : projects.filter((p) => p.categories.includes(active));
 
   return (
     <div>
       <div className="flex flex-wrap gap-3">
-        {["All", ...categories].map((category) => (
+        {[null, ...categories].map((category) => (
           <button
-            key={category}
+            key={category ?? "__all__"}
             onClick={() => setActive(category)}
             className={cn(
               "rounded-full border px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors duration-300",
@@ -26,7 +34,7 @@ export function PortfolioGrid({ projects }: { projects: ProjectCardData[] }) {
                 : "border-border bg-transparent text-muted hover:border-primary hover:text-primary"
             )}
           >
-            {category}
+            {category ?? allLabel}
           </button>
         ))}
       </div>
@@ -49,7 +57,7 @@ export function PortfolioGrid({ projects }: { projects: ProjectCardData[] }) {
       </motion.div>
 
       {filtered.length === 0 && (
-        <p className="mt-16 text-center text-muted">No projects in this category yet — check back soon.</p>
+        <p className="mt-16 text-center text-muted">{emptyText}</p>
       )}
     </div>
   );

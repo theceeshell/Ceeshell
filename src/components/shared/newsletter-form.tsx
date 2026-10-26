@@ -8,17 +8,23 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { subscribeNewsletterAction, type NewsletterState } from "@/lib/actions/newsletter-actions";
 import { submitKeepingValues } from "@/lib/form-submit";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 const initialState: NewsletterState = {};
 
-export function NewsletterForm({ dark = false }: { dark?: boolean }) {
+interface NewsletterFormProps {
+  dark?: boolean;
+  texts: Pick<SiteTexts["newsletter"], "placeholder" | "button" | "success">;
+}
+
+export function NewsletterForm({ dark = false, texts }: NewsletterFormProps) {
   const [state, formAction, isPending] = useActionState(subscribeNewsletterAction, initialState);
   const id = React.useId();
 
   if (state.success) {
     return (
       <p role="status" className={cn("flex items-center gap-2 text-sm font-semibold", dark ? "text-white" : "text-primary")}>
-        <Check className="h-4 w-4 text-secondary" /> You&apos;re subscribed. Welcome aboard.
+        <Check className="h-4 w-4 text-secondary" /> {texts.success}
       </p>
     );
   }
@@ -39,14 +45,14 @@ export function NewsletterForm({ dark = false }: { dark?: boolean }) {
           type="email"
           required
           autoComplete="email"
-          placeholder="Your email"
+          placeholder={texts.placeholder}
           className={cn(
             dark && "border-white/20 bg-white/5 text-white placeholder:text-white/40 focus:border-white/50 focus:ring-white/20"
           )}
         />
         <Button type="submit" variant={dark ? "light" : "primary"} size="default" className="shrink-0" disabled={isPending}>
           {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-          Subscribe
+          {texts.button}
         </Button>
       </div>
       {state.error && (

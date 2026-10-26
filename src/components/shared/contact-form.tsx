@@ -8,15 +8,7 @@ import { Input, Textarea, Label } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { submitInquiryAction, type InquiryState } from "@/lib/actions/inquiry-actions";
 import { submitKeepingValues } from "@/lib/form-submit";
-
-const budgets = [
-  "Under PKR 150,000",
-  "PKR 150,000 – 500,000",
-  "PKR 500,000 – 1,500,000",
-  "PKR 1,500,000 – 4,000,000",
-  "PKR 4,000,000+",
-];
-const timelines = ["As soon as possible", "Within 1 month", "1 – 3 months", "3 – 6 months", "Flexible / exploring"];
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 const initialState: InquiryState = {};
 
@@ -31,9 +23,10 @@ export interface ContactFormOption {
 interface ContactFormProps {
   industries: ContactFormOption[];
   services: ContactFormOption[];
+  texts: SiteTexts["contactForm"];
 }
 
-export function ContactForm({ industries, services }: ContactFormProps) {
+export function ContactForm({ industries, services, texts: t }: ContactFormProps) {
   const [state, formAction, isPending] = useActionState(submitInquiryAction, initialState);
   const [fileName, setFileName] = React.useState<string | null>(null);
   const [fileError, setFileError] = React.useState<string | null>(null);
@@ -42,9 +35,9 @@ export function ContactForm({ industries, services }: ContactFormProps) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-[1.75rem] border border-border bg-surface px-8 py-16 text-center">
         <CheckCircle2 className="h-12 w-12 text-secondary" />
-        <h3 className="font-heading text-2xl font-medium text-primary">Thank you — your inquiry is in.</h3>
+        <h3 className="font-heading text-2xl font-medium text-primary">{t.successHeading}</h3>
         <p className="max-w-md text-sm leading-relaxed text-muted">
-          We review every submission personally and typically respond within 2 business days with next steps.
+          {t.successText}
         </p>
       </div>
     );
@@ -59,22 +52,22 @@ export function ContactForm({ industries, services }: ContactFormProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Full Name" htmlFor="name">
-          <Input id="name" name="name" required placeholder="Jane Cooper" />
+        <Field label={t.nameLabel} htmlFor="name">
+          <Input id="name" name="name" required placeholder={t.namePlaceholder} />
         </Field>
-        <Field label="Company" htmlFor="company">
-          <Input id="company" name="company" required placeholder="Your company name" />
+        <Field label={t.companyLabel} htmlFor="company">
+          <Input id="company" name="company" required placeholder={t.companyPlaceholder} />
         </Field>
-        <Field label="Email" htmlFor="email">
-          <Input id="email" name="email" type="email" required placeholder="jane@company.com" />
+        <Field label={t.emailLabel} htmlFor="email">
+          <Input id="email" name="email" type="email" required placeholder={t.emailPlaceholder} />
         </Field>
-        <Field label="Phone" htmlFor="phone">
-          <Input id="phone" name="phone" type="tel" placeholder="+92 3__ _______" />
+        <Field label={t.phoneLabel} htmlFor="phone">
+          <Input id="phone" name="phone" type="tel" placeholder={t.phonePlaceholder} />
         </Field>
-        <Field label="Industry" htmlFor="industry">
+        <Field label={t.industryLabel} htmlFor="industry">
           <Select name="industry">
             <SelectTrigger id="industry">
-              <SelectValue placeholder="Select your industry" />
+              <SelectValue placeholder={t.industryPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {industries.map((industry) => (
@@ -82,14 +75,14 @@ export function ContactForm({ industries, services }: ContactFormProps) {
                   {industry.label}
                 </SelectItem>
               ))}
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="other">{t.industryOther}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Required Service" htmlFor="service">
+        <Field label={t.serviceLabel} htmlFor="service">
           <Select name="service">
             <SelectTrigger id="service">
-              <SelectValue placeholder="Select a service" />
+              <SelectValue placeholder={t.servicePlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {services.map((service) => (
@@ -97,17 +90,17 @@ export function ContactForm({ industries, services }: ContactFormProps) {
                   {service.label}
                 </SelectItem>
               ))}
-              <SelectItem value="not-sure">Not sure yet</SelectItem>
+              <SelectItem value="not-sure">{t.serviceNotSure}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Budget Range" htmlFor="budget">
+        <Field label={t.budgetLabel} htmlFor="budget">
           <Select name="budget">
             <SelectTrigger id="budget">
-              <SelectValue placeholder="Select a budget range" />
+              <SelectValue placeholder={t.budgetPlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {budgets.map((b) => (
+              {t.budgets.map((b) => (
                 <SelectItem key={b} value={b}>
                   {b}
                 </SelectItem>
@@ -115,15 +108,15 @@ export function ContactForm({ industries, services }: ContactFormProps) {
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Timeline" htmlFor="timeline">
+        <Field label={t.timelineLabel} htmlFor="timeline">
           <Select name="timeline">
             <SelectTrigger id="timeline">
-              <SelectValue placeholder="Select your timeline" />
+              <SelectValue placeholder={t.timelinePlaceholder} />
             </SelectTrigger>
             <SelectContent>
-              {timelines.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t}
+              {t.timelines.map((timeline) => (
+                <SelectItem key={timeline} value={timeline}>
+                  {timeline}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -131,23 +124,23 @@ export function ContactForm({ industries, services }: ContactFormProps) {
         </Field>
       </div>
 
-      <Field label="Project Description" htmlFor="description">
+      <Field label={t.messageLabel} htmlFor="description">
         <Textarea
           id="description"
           name="description"
           required
           rows={5}
-          placeholder="Tell us about your brand, your goals and what you're looking to achieve."
+          placeholder={t.messagePlaceholder}
         />
       </Field>
 
-      <Field label="Reference Files (optional)" htmlFor="file">
+      <Field label={t.fileLabel} htmlFor="file">
         <label
           htmlFor="file"
           className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-white px-4 py-3.5 text-sm text-muted transition-colors hover:border-secondary"
         >
           <UploadCloud className="h-4 w-4 shrink-0" />
-          {fileName ?? "Attach a brief, brand deck or reference image (PDF, DOCX, PPTX, JPG, PNG · max 4 MB)"}
+          {fileName ?? t.fileHint}
         </label>
         <input
           id="file"
@@ -179,7 +172,7 @@ export function ContactForm({ industries, services }: ContactFormProps) {
 
       <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isPending}>
         {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-        Submit Inquiry
+        {t.submit}
       </Button>
     </form>
   );

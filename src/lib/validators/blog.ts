@@ -2,15 +2,6 @@ import { z } from "zod";
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export const blogCategories = [
-  "Branding",
-  "Packaging",
-  "Photography",
-  "Print Production",
-  "Design Trends",
-  "Business",
-] as const;
-
 /**
  * Covers the simple form fields only. contentJson/contentHtml come from the
  * RichTextEditor and are handled separately (see blog-actions.ts) rather than
@@ -22,7 +13,7 @@ export const blogPostSchema = z.object({
     .string()
     .min(1, "Slug is required")
     .regex(slugRegex, "Use lowercase letters, numbers, and hyphens only, e.g. our-latest-project"),
-  featuredImageUrl: z.string().min(1, "Featured image URL is required"),
+  featuredImageUrl: z.string().min(1, "Choose a featured image"),
   author: z.string().min(1, "Author is required"),
   category: z.string().min(1, "Category is required"),
   tags: z.array(z.string()),

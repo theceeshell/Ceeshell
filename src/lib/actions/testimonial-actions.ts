@@ -26,3 +26,9 @@ export async function deleteTestimonialAction(id: string) {
   await prisma.testimonial.delete({ where: { id } });
   revalidateSite();
 }
+
+export async function reorderTestimonialsAction(orderedIds: string[]) {
+  await requireSession();
+  await prisma.$transaction(orderedIds.map((id, index) => prisma.testimonial.update({ where: { id }, data: { order: index } })));
+  revalidateSite();
+}

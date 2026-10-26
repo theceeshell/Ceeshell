@@ -12,9 +12,11 @@ interface ServicesOverviewProps {
   description?: string;
   services: ServiceCardData[];
   viewAllLink?: { label: string; href: string };
+  /** servicePage.cardLink text shown on each card. */
+  cardLinkLabel: string;
 }
 
-export function ServicesOverview({ eyebrow, heading, description, services, viewAllLink }: ServicesOverviewProps) {
+export function ServicesOverview({ eyebrow, heading, description, services, viewAllLink, cardLinkLabel }: ServicesOverviewProps) {
   return (
     <Section>
       <Container>
@@ -34,7 +36,7 @@ export function ServicesOverview({ eyebrow, heading, description, services, view
         <RevealGroup className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service, i) => (
             <RevealItem key={service.slug}>
-              <ServiceCard service={service} index={i} />
+              <ServiceCard service={service} index={i} linkLabel={cardLinkLabel} />
             </RevealItem>
           ))}
         </RevealGroup>

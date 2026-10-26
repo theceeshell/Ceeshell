@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { FormField } from "@/components/admin/ui/form-field";
+import { ImageField } from "@/components/admin/media/image-field";
 import { teamMemberSchema, type TeamMemberFormValues } from "@/lib/validators/team";
 import { createTeamMemberAction, updateTeamMemberAction } from "@/lib/actions/team-actions";
 import type { TeamRow } from "@/components/admin/team/team-manager";
@@ -108,9 +109,20 @@ export function TeamFormDialog({ open, onOpenChange, initialValues, onSaved }: T
             <Textarea id="bio" rows={3} {...register("bio")} placeholder="A short one or two sentence bio." />
           </FormField>
 
-          <FormField label="Photo URL" htmlFor="photoUrl" error={errors.photoUrl?.message} hint="Paste an image URL, or upload it in Media Library and paste the URL here.">
-            <Input id="photoUrl" {...register("photoUrl")} placeholder="https://…" />
-          </FormField>
+          <Controller
+            control={control}
+            name="photoUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Photo (optional)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.photoUrl?.message}
+                aspect="square"
+                optional
+              />
+            )}
+          />
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <FormField label="LinkedIn" htmlFor="linkedin" error={errors.linkedin?.message}>

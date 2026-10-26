@@ -4,11 +4,11 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { Reveal } from "@/components/shared/reveal";
-import { ContactForm } from "@/components/shared/contact-form";
+import { ContactForm, type ContactFormOption } from "@/components/shared/contact-form";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { InstagramIcon, LinkedInIcon, BehanceIcon } from "@/components/shared/social-icons";
 import type { FaqItemData } from "@/components/shared/faq-section";
-import { prisma } from "@/lib/db";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
 export interface ContactSiteSettings {
   email: string;
@@ -25,14 +25,14 @@ interface ContactBlockProps {
   showMap: boolean;
   faqs: FaqItemData[];
   siteSettings: ContactSiteSettings;
+  /** Choices for the form's Industry / Service dropdowns (visible items only). */
+  industries: ContactFormOption[];
+  services: ContactFormOption[];
+  texts: { contactInfo: SiteTexts["contactInfo"]; contactForm: SiteTexts["contactForm"] };
 }
 
-export async function ContactBlock({ heading, description, showMap, faqs, siteSettings }: ContactBlockProps) {
-  const [industries, services] = await Promise.all([
-    prisma.industry.findMany({ orderBy: { order: "asc" }, select: { slug: true, name: true } }),
-    prisma.service.findMany({ orderBy: { order: "asc" }, select: { slug: true, shortName: true } }),
-  ]);
-
+export function ContactBlock({ heading, description, showMap, faqs, siteSettings, industries, services, texts }: ContactBlockProps) {
+  const t = texts.contactInfo;
   return (
     <>
       <Section>
@@ -41,25 +41,22 @@ export async function ContactBlock({ heading, description, showMap, faqs, siteSe
             <h2 className="font-heading text-3xl font-medium text-primary sm:text-4xl">{heading}</h2>
             {description && <p className="mt-3 max-w-lg text-muted">{description}</p>}
             <div className="mt-10">
-              <ContactForm
-                industries={industries.map((i) => ({ slug: i.slug, label: i.name }))}
-                services={services.map((s) => ({ slug: s.slug, label: s.shortName }))}
-              />
+              <ContactForm industries={industries} services={services} texts={texts.contactForm} />
             </div>
           </Reveal>
 
           <Reveal direction="left" className="space-y-10">
             <div className="rounded-[1.75rem] border border-border bg-surface p-8">
-              <h3 className="font-heading text-xl font-medium text-primary">Business Information</h3>
+              <h3 className="font-heading text-xl font-medium text-primary">{t.heading}</h3>
               <ul className="mt-6 space-y-5 text-sm">
-                <InfoRow icon={Mail} label="Email">
+                <InfoRow icon={Mail} label={t.emailLabel}>
                   <a href={`mailto:${siteSettings.email}`} className="hover:text-secondary">{siteSettings.email}</a>
                 </InfoRow>
-                <InfoRow icon={Phone} label="Phone">
+                <InfoRow icon={Phone} label={t.phoneLabel}>
                   <a href={`tel:${siteSettings.phone.replace(/[^+\d]/g, "")}`} className="hover:text-secondary">{siteSettings.phone}</a>
                 </InfoRow>
-                <InfoRow icon={MapPin} label="Studio">{siteSettings.address}</InfoRow>
-                <InfoRow icon={Clock} label="Hours">{siteSettings.businessHours}</InfoRow>
+                <InfoRow icon={MapPin} label={t.addressLabel}>{siteSettings.address}</InfoRow>
+                <InfoRow icon={Clock} label={t.hoursLabel}>{siteSettings.businessHours}</InfoRow>
               </ul>
               <div className="mt-8 flex items-center gap-3 border-t border-border pt-6">
                 {siteSettings.socialLinks.instagram && (
@@ -92,7 +89,7 @@ export async function ContactBlock({ heading, description, showMap, faqs, siteSe
       {faqs.length > 0 && (
         <Section className="bg-surface">
           <Container className="mx-auto max-w-3xl">
-            <SectionHeading eyebrow="Quick Answers" title="Before you reach out" align="center" className="mx-auto" />
+            <SectionHeading eyebrow={t.faqEyebrow} title={t.faqHeading} align="center" className="mx-auto" />
             <Reveal className="mt-12">
               <Accordion type="single" collapsible>
                 {faqs.map((faq) => (
@@ -104,9 +101,9 @@ export async function ContactBlock({ heading, description, showMap, faqs, siteSe
               </Accordion>
             </Reveal>
             <p className="mt-8 text-center text-sm text-muted">
-              Have a different question?{" "}
+              {t.faqMoreText}{" "}
               <Link href="/faq" className="font-semibold text-secondary hover:underline">
-                View the full FAQ
+                {t.faqMoreLink}
               </Link>
             </p>
           </Container>

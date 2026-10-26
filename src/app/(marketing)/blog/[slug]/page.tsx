@@ -4,7 +4,8 @@ import Image from "@/components/ui/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { getSiteSettings } from "@/lib/cms/site-data";
+import { getSiteSettings, getSiteTexts } from "@/lib/cms/site-data";
+import { fill } from "@/lib/cms/site-texts";
 import { estimateReadTime, toBlogCard } from "@/lib/cms/adapters";
 import { jsonLd, sanitizeBlogHtml } from "@/lib/cms/html";
 import { pageMetadata } from "@/lib/cms/metadata";
@@ -40,7 +41,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
-  const settings = await getSiteSettings();
+  const [settings, texts] = await Promise.all([getSiteSettings(), getSiteTexts()]);
 
   const relatedRows = await prisma.blogPost.findMany({
     where: { status: "published", category: post.category, slug: { not: post.slug } },
@@ -53,7 +54,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     orderBy: { publishDate: "desc" },
   });
 
-  const readTime = estimateReadTime(post.contentHtml);
+  const readTime = estimateReadTime(post.contentHtml, texts.blog.readTime);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -77,9 +78,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <Section size="compact" className="bg-surface pt-40">
         <Container className="mx-auto max-w-3xl">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs uppercase tracking-[0.14em] text-muted">
-            <Link href="/" className="hover:text-primary">Home</Link>
+            <Link href="/" className="hover:text-primary">{texts.breadcrumbs.home}</Link>
             <span>/</span>
-            <Link href="/blog" className="hover:text-primary">Blog</Link>
+            <Link href="/blog" className="hover:text-primary">{texts.breadcrumbs.blog}</Link>
           </nav>
           <div className="mt-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.1em] text-secondary">
             <span>{post.category}</span>
@@ -93,7 +94,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <h1 className="mt-6 text-balance font-heading text-4xl font-medium leading-[1.1] text-primary sm:text-5xl">
             {post.title}
           </h1>
-          <p className="mt-6 text-sm font-medium text-muted">By {post.author}</p>
+          <p className="mt-6 text-sm font-medium text-muted">{fill(texts.blog.byAuthor, { author: post.author })}</p>
         </Container>
       </Section>
 
@@ -117,10 +118,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {related.length > 0 && (
         <Section className="bg-surface">
           <Container>
-            <h2 className="font-heading text-3xl font-medium text-primary sm:text-4xl">Related Articles</h2>
+            <h2 className="font-heading text-3xl font-medium text-primary sm:text-4xl">{texts.blog.relatedHeading}</h2>
             <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-3">
               {related.map((p) => {
-                const card = toBlogCard(p);
+                const card = toBlogCard(p, texts.blog.readTime);
                 return (
                   <Link key={card.slug} href={`/blog/${card.slug}`} className="group flex flex-col gap-4">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -137,10 +138,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       <Section size="compact" className="bg-primary text-white">
         <Container className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
-          <h2 className="font-heading text-3xl font-medium text-white sm:text-4xl">Enjoyed this article?</h2>
-          <p className="text-white/70">Subscribe for occasional notes on branding, packaging and photography.</p>
+          <h2 className="font-heading text-3xl font-medium text-white sm:text-4xl">{texts.newsletter.articleHeading}</h2>
+          <p className="text-white/70">{texts.newsletter.articleText}</p>
           <div className="w-full max-w-sm">
-            <NewsletterForm dark />
+            <NewsletterForm dark texts={texts.newsletter} />
           </div>
         </Container>
       </Section>

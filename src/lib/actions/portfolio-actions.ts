@@ -98,6 +98,7 @@ export async function duplicatePortfolioProjectAction(id: string) {
       deliverables: original.deliverables as string[],
       testimonialId: original.testimonialId,
       featured: false,
+      visible: false, // copies start hidden until edited
       order: (maxOrder._max.order ?? -1) + 1,
       seoTitle: original.seoTitle,
       seoDescription: original.seoDescription,

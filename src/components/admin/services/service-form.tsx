@@ -18,11 +18,11 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { FormField } from "@/components/admin/ui/form-field";
-import { serviceFormSchema, serviceIcons, type ServiceFormShape } from "@/lib/validators/service";
+import { IconPicker } from "@/components/admin/ui/icon-picker";
+import { GalleryField, ImageField } from "@/components/admin/media/image-field";
+import { serviceFormSchema, type ServiceFormShape } from "@/lib/validators/service";
 import { createServiceAction, updateServiceAction } from "@/lib/actions/service-actions";
-import { iconMap } from "@/components/shared/icon-map";
 
 export interface ServiceRecord {
   id: string;
@@ -40,6 +40,7 @@ export interface ServiceRecord {
   gallery: unknown;
   faqs: unknown;
   featured: boolean;
+  visible: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
 }
@@ -71,9 +72,10 @@ function emptyValues(): ServiceFormShape {
     benefits: [{ title: "", description: "" }],
     process: [{ title: "", description: "" }],
     subServices: [{ title: "", description: "" }],
-    gallery: [{ url: "" }],
+    gallery: [],
     faqs: [],
     featured: true,
+    visible: true,
     seoTitle: "",
     seoDescription: "",
   };
@@ -91,7 +93,7 @@ function toFormShape(service: ServiceRecord): ServiceFormShape {
     slug: service.slug,
     name: service.name,
     shortName: service.shortName,
-    icon: service.icon as ServiceFormShape["icon"],
+    icon: service.icon,
     tagline: service.tagline,
     summary: service.summary,
     heroImageUrl: service.heroImageUrl,
@@ -99,9 +101,10 @@ function toFormShape(service: ServiceRecord): ServiceFormShape {
     benefits: benefits.length ? benefits : [{ title: "", description: "" }],
     process: process.length ? process : [{ title: "", description: "" }],
     subServices: subServices.length ? subServices : [{ title: "", description: "" }],
-    gallery: gallery.length ? gallery.map((url) => ({ url })) : [{ url: "" }],
+    gallery,
     faqs,
     featured: service.featured,
+    visible: service.visible,
     seoTitle: service.seoTitle ?? "",
     seoDescription: service.seoDescription ?? "",
   };
@@ -124,7 +127,6 @@ export function ServiceForm({ service }: ServiceFormProps) {
   });
 
   const overviewArray = useFieldArray({ control, name: "overview" });
-  const galleryArray = useFieldArray({ control, name: "gallery" });
   const faqsArray = useFieldArray({ control, name: "faqs" });
 
   const nameValue = useWatch({ control, name: "name" });
@@ -139,7 +141,6 @@ export function ServiceForm({ service }: ServiceFormProps) {
     const payload = {
       ...values,
       overview: values.overview.map((row) => row.value),
-      gallery: values.gallery.map((row) => row.url),
       seoTitle: values.seoTitle?.trim() ? values.seoTitle.trim() : null,
       seoDescription: values.seoDescription?.trim() ? values.seoDescription.trim() : null,
     };
@@ -197,26 +198,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
             <Controller
               control={control}
               name="icon"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="icon">
-                    <SelectValue placeholder="Select an icon" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceIcons.map((key) => {
-                      const Icon = iconMap[key];
-                      return (
-                        <SelectItem key={key} value={key}>
-                          <span className="flex items-center gap-2">
-                            <Icon className="h-4 w-4" />
-                            <span className="capitalize">{key}</span>
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              )}
+              render={({ field }) => <IconPicker id="icon" value={field.value} onChange={field.onChange} />}
             />
           </FormField>
         </div>
@@ -234,14 +216,19 @@ export function ServiceForm({ service }: ServiceFormProps) {
           />
         </FormField>
 
-        <FormField
-          label="Hero Image URL"
-          htmlFor="heroImageUrl"
-          error={errors.heroImageUrl?.message}
-          hint="Paste an image URL, or upload it in Media Library and paste the URL here."
-        >
-          <Input id="heroImageUrl" {...register("heroImageUrl")} placeholder="https://…" />
-        </FormField>
+        <Controller
+          control={control}
+          name="heroImageUrl"
+          render={({ field }) => (
+            <ImageField
+              label="Main image"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.heroImageUrl?.message}
+              hint="The large image at the top of the service page."
+            />
+          )}
+        />
 
         <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">
           <div>
@@ -254,6 +241,18 @@ export function ServiceForm({ service }: ServiceFormProps) {
             control={control}
             name="featured"
             render={({ field }) => <Switch id="featured" checked={field.value} onCheckedChange={field.onChange} />}
+          />
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">
+          <div>
+            <Label htmlFor="visible">Show on website</Label>
+            <p className="mt-0.5 text-xs text-muted">Turn off to hide it from the website without deleting it.</p>
+          </div>
+          <Controller
+            control={control}
+            name="visible"
+            render={({ field }) => <Switch id="visible" checked={field.value} onCheckedChange={field.onChange} />}
           />
         </div>
       </div>
@@ -337,35 +336,21 @@ export function ServiceForm({ service }: ServiceFormProps) {
       <div className="rounded-2xl border border-border bg-white p-6 space-y-5">
         <div>
           <h3 className="font-heading text-lg font-medium text-primary mb-1">Gallery</h3>
-          <p className="text-sm text-muted">Image URLs shown in the service&apos;s gallery.</p>
+          <p className="text-sm text-muted">Images shown in the service&apos;s gallery.</p>
         </div>
-        <div className="space-y-3">
-          {galleryArray.fields.map((field, index) => (
-            <div key={field.id} className="space-y-1.5">
-              <div className="flex gap-3">
-                <Input {...register(`gallery.${index}.url`)} placeholder="https://…" className="flex-1" />
-                <button
-                  type="button"
-                  aria-label="Remove image"
-                  onClick={() => galleryArray.remove(index)}
-                  disabled={galleryArray.fields.length === 1}
-                  className="flex h-[3.25rem] w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              {errors.gallery?.[index]?.url?.message && (
-                <p className="text-xs font-medium text-red-600">{errors.gallery[index]?.url?.message}</p>
-              )}
-            </div>
-          ))}
-        </div>
-        {typeof errors.gallery?.message === "string" && (
-          <p className="text-xs font-medium text-red-600">{errors.gallery.message}</p>
-        )}
-        <Button type="button" variant="secondary" size="sm" onClick={() => galleryArray.append({ url: "" })}>
-          <Plus className="h-4 w-4" /> Add Image
-        </Button>
+        <Controller
+          control={control}
+          name="gallery"
+          render={({ field }) => (
+            <GalleryField
+              label="Images"
+              values={field.value}
+              onChange={field.onChange}
+              error={errors.gallery?.message}
+              hint="Shown in this order. Use the arrows to rearrange."
+            />
+          )}
+        />
       </div>
 
       {/* FAQs */}

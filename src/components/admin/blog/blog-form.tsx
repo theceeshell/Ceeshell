@@ -13,13 +13,16 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { FormField } from "@/components/admin/ui/form-field";
 import { RichTextEditor } from "@/components/admin/blog/rich-text-editor";
-import { blogPostSchema, blogCategories, type BlogPostFormValues } from "@/lib/validators/blog";
+import { ImageField } from "@/components/admin/media/image-field";
+import { blogPostSchema, type BlogPostFormValues } from "@/lib/validators/blog";
 import { createBlogPostAction, updateBlogPostAction } from "@/lib/actions/blog-actions";
 import type { BlogPost } from "@/generated/prisma/client";
 import { cn } from "@/lib/utils";
 
 interface BlogFormProps {
   post?: BlogPost | null;
+  /** Editor-managed category list (Website Texts -> Blog). */
+  categories: string[];
 }
 
 function slugify(value: string) {
@@ -79,7 +82,7 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-export function BlogForm({ post }: BlogFormProps) {
+export function BlogForm({ post, categories }: BlogFormProps) {
   const router = useRouter();
   const isEditing = Boolean(post);
   const defaultValues = React.useMemo(() => toFormValues(post), [post]);
@@ -153,45 +156,45 @@ export function BlogForm({ post }: BlogFormProps) {
           </FormField>
         </div>
 
-        <FormField label="Featured Image URL" htmlFor="featuredImageUrl" error={errors.featuredImageUrl?.message} hint="Paste an image URL, or upload it in Media Library and paste the URL here.">
-          <Input id="featuredImageUrl" {...register("featuredImageUrl")} placeholder="https://…" />
-        </FormField>
+        <Controller
+          control={control}
+          name="featuredImageUrl"
+          render={({ field }) => (
+            <ImageField
+              label="Featured image"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.featuredImageUrl?.message}
+              hint="Shown at the top of the post and on blog listing cards."
+            />
+          )}
+        />
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <FormField label="Author" htmlFor="author" error={errors.author?.message}>
             <Input id="author" {...register("author")} placeholder="Ayesha Raza" />
           </FormField>
 
-          <FormField label="Category" htmlFor="category" error={errors.category?.message}>
+          <FormField label="Category" htmlFor="category" error={errors.category?.message} hint="Edit the list in Website Texts.">
             <Controller
               control={control}
               name="category"
               render={({ field }) => {
-                const isPreset = (blogCategories as readonly string[]).includes(field.value);
-                const selectValue = isPreset ? field.value : field.value ? "Other" : "";
+                // Keep showing an existing category even if it was removed from the list.
+                const options = field.value && !categories.includes(field.value) ? [...categories, field.value] : categories;
                 return (
-                  <div className="space-y-2">
-                    <Select value={selectValue} onValueChange={(v) => field.onChange(v === "Other" ? "" : v)}>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {blogCategories.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value="Other">Other…</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {selectValue === "Other" && (
-                      <Input
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                        placeholder="Custom category"
-                      />
-                    )}
-                  </div>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 );
               }}
             />

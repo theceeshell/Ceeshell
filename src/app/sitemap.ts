@@ -8,9 +8,9 @@ export const revalidate = 86400;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [pages, services, projects, industries, posts] = await Promise.all([
     prisma.page.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.service.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.portfolioProject.findMany({ select: { slug: true, updatedAt: true } }),
-    prisma.industry.findMany({ select: { slug: true } }),
+    prisma.service.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
+    prisma.portfolioProject.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
+    prisma.industry.findMany({ where: { visible: true }, select: { slug: true, updatedAt: true } }),
     prisma.blogPost.findMany({ where: { status: "published" }, select: { slug: true, updatedAt: true } }),
   ]);
 
@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...services.map((s) => ({ url: url(`/services/${s.slug}`), lastModified: s.updatedAt, priority: 0.7 })),
     ...projects.map((p) => ({ url: url(`/portfolio/${p.slug}`), lastModified: p.updatedAt, priority: 0.6 })),
-    ...industries.map((i) => ({ url: url(`/industries/${i.slug}`), priority: 0.6 })),
+    ...industries.map((i) => ({ url: url(`/industries/${i.slug}`), lastModified: i.updatedAt, priority: 0.6 })),
     ...posts.map((p) => ({ url: url(`/blog/${p.slug}`), lastModified: p.updatedAt, priority: 0.5 })),
     { url: url("/privacy-policy"), priority: 0.2 },
     { url: url("/terms"), priority: 0.2 },

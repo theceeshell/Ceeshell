@@ -7,8 +7,15 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { Reveal } from "@/components/shared/reveal";
 import { BlogGrid } from "@/components/shared/blog-grid";
 import type { BlogCardData } from "@/lib/cms/adapters";
+import type { SiteTexts } from "@/lib/cms/site-texts";
 
-export function BlogShowcase({ heading, posts }: { heading: string; posts: BlogCardData[] }) {
+interface BlogShowcaseProps {
+  heading: string;
+  posts: BlogCardData[];
+  texts: SiteTexts["blog"];
+}
+
+export function BlogShowcase({ heading, posts, texts }: BlogShowcaseProps) {
   const [featured, ...rest] = posts;
   if (!featured) return null;
 
@@ -16,7 +23,7 @@ export function BlogShowcase({ heading, posts }: { heading: string; posts: BlogC
     <>
       <Section size="compact" className="border-b border-border">
         <Container>
-          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">Featured Article</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-secondary">{texts.featuredLabel}</span>
           <Reveal delay={0.05}>
             <Link href={`/blog/${featured.slug}`} className="group mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-center">
               <div className="relative aspect-[16/10] overflow-hidden rounded-[1.75rem]">
@@ -40,7 +47,7 @@ export function BlogShowcase({ heading, posts }: { heading: string; posts: BlogC
                 </h2>
                 <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">{featured.excerpt}</p>
                 <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                  Read Article
+                  {texts.readArticle}
                   <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                 </span>
               </div>
@@ -51,9 +58,12 @@ export function BlogShowcase({ heading, posts }: { heading: string; posts: BlogC
 
       <Section>
         <Container>
-          <SectionHeading eyebrow="Latest Posts" title={heading} className="max-w-2xl" />
+          <SectionHeading eyebrow={texts.latestEyebrow} title={heading} className="max-w-2xl" />
           <div className="mt-12">
-            <BlogGrid posts={rest} />
+            <BlogGrid
+              posts={rest}
+              texts={{ filterAll: texts.filterAll, searchPlaceholder: texts.searchPlaceholder, searchEmpty: texts.searchEmpty }}
+            />
           </div>
         </Container>
       </Section>

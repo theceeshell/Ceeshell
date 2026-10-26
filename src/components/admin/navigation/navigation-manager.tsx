@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { NavigationFormDialog } from "@/components/admin/navigation/navigation-form-dialog";
+import type { LinkOption } from "@/lib/cms/link-options";
 import { deleteNavigationItemAction, reorderNavigationItemsAction } from "@/lib/actions/navigation-actions";
 
 export interface NavigationItemRow {
@@ -20,7 +21,7 @@ export interface NavigationItemRow {
   visible: boolean;
 }
 
-export function NavigationManager({ items }: { items: NavigationItemRow[] }) {
+export function NavigationManager({ items, linkOptions }: { items: NavigationItemRow[]; linkOptions: LinkOption[] }) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<NavigationItemRow | null>(null);
@@ -163,6 +164,7 @@ export function NavigationManager({ items }: { items: NavigationItemRow[] }) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         initialValues={editing}
+        linkOptions={linkOptions}
         onSaved={() => {
           router.refresh();
         }}

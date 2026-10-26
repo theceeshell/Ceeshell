@@ -10,6 +10,7 @@ import { Input, Textarea, Label } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { FormField } from "@/components/admin/ui/form-field";
+import { ImageField } from "@/components/admin/media/image-field";
 import { seoSettingsSchema, type SeoSettingsFormValues } from "@/lib/validators/site-settings";
 import { updateSeoSettingsAction } from "@/lib/actions/site-settings-actions";
 
@@ -30,7 +31,7 @@ export function SeoSettingsForm({ initialValues }: SeoSettingsFormProps) {
 
   async function onSubmit(values: SeoSettingsFormValues) {
     try {
-      await updateSeoSettingsAction(values);
+      await updateSeoSettingsAction({ ...values, defaultOgImageUrl: values.defaultOgImageUrl || null });
       toast.success("SEO settings updated");
     } catch {
       toast.error("Something went wrong — please try again.");
@@ -59,14 +60,20 @@ export function SeoSettingsForm({ initialValues }: SeoSettingsFormProps) {
           />
         </FormField>
 
-        <FormField
-          label="Default OG Image URL"
-          htmlFor="defaultOgImageUrl"
-          error={errors.defaultOgImageUrl?.message}
-          hint="Paste a URL from the Media Library."
-        >
-          <Input id="defaultOgImageUrl" {...register("defaultOgImageUrl")} placeholder="https://…" />
-        </FormField>
+        <Controller
+          control={control}
+          name="defaultOgImageUrl"
+          render={({ field }) => (
+            <ImageField
+              label="Default sharing image"
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.defaultOgImageUrl?.message}
+              hint="Shown when a page is shared on social media (1200×630 recommended)"
+              optional
+            />
+          )}
+        />
 
         <FormField label="Twitter Card Type" htmlFor="twitterCardType" error={errors.twitterCardType?.message}>
           <Controller
@@ -93,6 +100,15 @@ export function SeoSettingsForm({ initialValues }: SeoSettingsFormProps) {
           hint="Google Search Console verification code, if you have one."
         >
           <Input id="googleVerification" {...register("googleVerification")} placeholder="abc123…" />
+        </FormField>
+
+        <FormField
+          label="Google Analytics ID"
+          htmlFor="googleAnalyticsId"
+          error={errors.googleAnalyticsId?.message}
+          hint="Free visitor statistics. Paste your Measurement ID (G-…) from Google Analytics; leave empty to turn analytics off."
+        >
+          <Input id="googleAnalyticsId" {...register("googleAnalyticsId")} placeholder="G-XXXXXXXXXX" />
         </FormField>
 
         <div className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">

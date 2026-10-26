@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { FormField } from "@/components/admin/ui/form-field";
+import { Switch } from "@/components/ui/switch";
+import { ImageField } from "@/components/admin/media/image-field";
 import { siteSettingsSchema, type SiteSettingsFormValues } from "@/lib/validators/site-settings";
 import { updateSiteSettingsAction } from "@/lib/actions/site-settings-actions";
 
@@ -29,6 +31,7 @@ export function SiteSettingsForm({ initialValues }: SiteSettingsFormProps) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<SiteSettingsFormValues>({
     resolver: zodResolver(siteSettingsSchema),
@@ -37,7 +40,12 @@ export function SiteSettingsForm({ initialValues }: SiteSettingsFormProps) {
 
   async function onSubmit(values: SiteSettingsFormValues) {
     try {
-      await updateSiteSettingsAction(values);
+      await updateSiteSettingsAction({
+        ...values,
+        logoUrl: values.logoUrl || null,
+        footerLogoUrl: values.footerLogoUrl || null,
+        faviconUrl: values.faviconUrl || null,
+      });
       toast.success("Settings updated");
     } catch {
       toast.error("Something went wrong — please try again.");
@@ -70,13 +78,26 @@ export function SiteSettingsForm({ initialValues }: SiteSettingsFormProps) {
           <FormField label="Phone" htmlFor="phone" error={errors.phone?.message}>
             <Input id="phone" {...register("phone")} placeholder="+92 300 1234567" />
           </FormField>
-          <FormField label="WhatsApp" htmlFor="whatsapp" error={errors.whatsapp?.message}>
+          <FormField label="WhatsApp" htmlFor="whatsapp" error={errors.whatsapp?.message} hint="Include the country code, e.g. +92 300 1234567.">
             <Input id="whatsapp" {...register("whatsapp")} placeholder="+92 300 1234567" />
           </FormField>
           <FormField label="Business Hours" htmlFor="businessHours" error={errors.businessHours?.message}>
             <Input id="businessHours" {...register("businessHours")} placeholder="Mon–Fri, 9am–6pm" />
           </FormField>
         </div>
+        <Controller
+          control={control}
+          name="whatsappButton"
+          render={({ field }) => (
+            <label className="flex items-center justify-between rounded-xl border border-border px-4 py-3.5">
+              <span>
+                <span className="block text-sm font-semibold text-primary">Show a WhatsApp chat button</span>
+                <span className="block text-xs text-muted">A round green button in the corner of every page that opens a WhatsApp chat with the number above.</span>
+              </span>
+              <Switch checked={field.value} onCheckedChange={field.onChange} />
+            </label>
+          )}
+        />
         <FormField label="Address" htmlFor="address" error={errors.address?.message}>
           <Textarea id="address" rows={3} {...register("address")} placeholder="Where the studio is located" />
         </FormField>
@@ -109,30 +130,51 @@ export function SiteSettingsForm({ initialValues }: SiteSettingsFormProps) {
       <section className="space-y-5 rounded-2xl border border-border bg-white p-6">
         <h3 className="font-heading text-lg font-medium text-primary">Branding</h3>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <FormField
-            label="Logo URL"
-            htmlFor="logoUrl"
-            error={errors.logoUrl?.message}
-            hint="Paste a URL from the Media Library."
-          >
-            <Input id="logoUrl" {...register("logoUrl")} placeholder="https://…" />
-          </FormField>
-          <FormField
-            label="Footer Logo URL"
-            htmlFor="footerLogoUrl"
-            error={errors.footerLogoUrl?.message}
-            hint="Paste a URL from the Media Library."
-          >
-            <Input id="footerLogoUrl" {...register("footerLogoUrl")} placeholder="https://…" />
-          </FormField>
-          <FormField
-            label="Favicon URL"
-            htmlFor="faviconUrl"
-            error={errors.faviconUrl?.message}
-            hint="Paste a URL from the Media Library."
-          >
-            <Input id="faviconUrl" {...register("faviconUrl")} placeholder="https://…" />
-          </FormField>
+          <Controller
+            control={control}
+            name="logoUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Logo"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.logoUrl?.message}
+                hint="Shown in the top menu bar."
+                aspect="square"
+                optional
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="footerLogoUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Footer logo"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.footerLogoUrl?.message}
+                hint="Shown at the bottom of every page. Uses the main logo if empty."
+                aspect="square"
+                optional
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="faviconUrl"
+            render={({ field }) => (
+              <ImageField
+                label="Browser tab icon (favicon)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.faviconUrl?.message}
+                hint="The small square icon in the browser tab."
+                aspect="square"
+                optional
+              />
+            )}
+          />
         </div>
       </section>
 

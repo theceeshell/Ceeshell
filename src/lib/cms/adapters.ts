@@ -10,6 +10,7 @@
 import type { ProjectCardData } from "@/components/shared/project-card";
 import type { TestimonialCardData } from "@/components/shared/testimonial-slider";
 import type { ServiceCardData } from "@/components/shared/service-card";
+import { fill } from "@/lib/cms/site-texts";
 
 type JsonArray = unknown[];
 
@@ -56,10 +57,11 @@ export function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? (value as JsonArray as string[]) : [];
 }
 
-export function estimateReadTime(html: string) {
+/** `template` is the blog.readTime text, e.g. "{minutes} min read". */
+export function estimateReadTime(html: string, template: string) {
   const words = html.replace(/<[^>]+>/g, " ").trim().split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.round(words / 200));
-  return `${minutes} min read`;
+  return fill(template, { minutes });
 }
 
 export interface BlogCardData {
@@ -71,20 +73,23 @@ export interface BlogCardData {
   readTime: string;
 }
 
-export function toBlogCard(row: {
-  slug: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  featuredImageUrl: string;
-  contentHtml: string;
-}): BlogCardData {
+export function toBlogCard(
+  row: {
+    slug: string;
+    title: string;
+    excerpt: string;
+    category: string;
+    featuredImageUrl: string;
+    contentHtml: string;
+  },
+  readTimeTemplate: string
+): BlogCardData {
   return {
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
     category: row.category,
     coverImage: row.featuredImageUrl,
-    readTime: estimateReadTime(row.contentHtml),
+    readTime: estimateReadTime(row.contentHtml, readTimeTemplate),
   };
 }

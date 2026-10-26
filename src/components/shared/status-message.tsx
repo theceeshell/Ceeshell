@@ -6,11 +6,14 @@ interface StatusMessageProps {
   eyebrow: string;
   title: string;
   description: string;
+  /** Default buttons, shown when no children are passed (notFound.homeButton / notFound.contactButton). */
+  homeLabel?: string;
+  contactLabel?: string;
   children?: React.ReactNode;
 }
 
 /** Full-height centered message for 404 / error states on the public site. */
-export function StatusMessage({ eyebrow, title, description, children }: StatusMessageProps) {
+export function StatusMessage({ eyebrow, title, description, homeLabel, contactLabel, children }: StatusMessageProps) {
   return (
     <Container className="flex min-h-[70vh] flex-col items-center justify-center gap-6 py-40 text-center">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-secondary">{eyebrow}</p>
@@ -19,12 +22,16 @@ export function StatusMessage({ eyebrow, title, description, children }: StatusM
       <div className="mt-2 flex flex-wrap justify-center gap-3">
         {children ?? (
           <>
-            <Button asChild>
-              <Link href="/">Back to home</Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/contact">Contact us</Link>
-            </Button>
+            {homeLabel && (
+              <Button asChild>
+                <Link href="/">{homeLabel}</Link>
+              </Button>
+            )}
+            {contactLabel && (
+              <Button asChild variant="secondary">
+                <Link href="/contact">{contactLabel}</Link>
+              </Button>
+            )}
           </>
         )}
       </div>

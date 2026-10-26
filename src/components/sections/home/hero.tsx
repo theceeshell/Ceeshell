@@ -17,9 +17,11 @@ interface HeroProps {
   backgroundImageUrl: string;
   primaryButton?: HeroButton;
   secondaryButton?: HeroButton;
+  /** general.heroScroll text. */
+  scrollLabel: string;
 }
 
-export function Hero({ badge, heading, description, backgroundImageUrl, primaryButton, secondaryButton }: HeroProps) {
+export function Hero({ badge, heading, description, backgroundImageUrl, primaryButton, secondaryButton, scrollLabel }: HeroProps) {
   return (
     <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-primary text-white">
       <Image
@@ -74,7 +76,7 @@ export function Hero({ badge, heading, description, backgroundImageUrl, primaryB
         aria-label="Scroll to explore"
         className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-white/60 transition-colors hover:text-white sm:flex"
       >
-        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em]">Scroll</span>
+        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em]">{scrollLabel}</span>
         <ChevronDown className="h-4 w-4 animate-bounce" />
       </Link>
     </section>

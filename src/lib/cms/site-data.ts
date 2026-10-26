@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import { resolveSiteTexts } from "@/lib/cms/site-texts";
 
 // Wrapped in React cache() so layout, metadata and page share one query per render.
 
@@ -27,3 +28,9 @@ export const getFooterConfig = cache(async () => {
 export const getNavigationItems = cache(async () =>
   prisma.navigationItem.findMany({ where: { visible: true }, orderBy: { order: "asc" } })
 );
+
+/** Every fixed label on the site, with editor overrides applied (Admin -> Website Texts). Never throws. */
+export const getSiteTexts = cache(async () => {
+  const settings = await prisma.siteSettings.findUnique({ where: { id: "singleton" }, select: { texts: true } }).catch(() => null);
+  return resolveSiteTexts(settings?.texts);
+});
