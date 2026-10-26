@@ -5,14 +5,12 @@ import { siteConfig } from "@/lib/site-config";
 import { getSiteSettings } from "@/lib/cms/site-data";
 
 export async function generateMetadata(): Promise<Metadata> {
-  // This runs on every request across the whole app (admin included) since it's
-  // in the root layout. A transient DB error here must never take the site down,
-  // so fall back to the static siteConfig defaults instead of throwing.
+  // A transient DB error here must never take the site down, so fall back to
+  // the static siteConfig defaults instead of throwing.
   const settings = await getSiteSettings().catch(() => null);
   const websiteName = settings?.websiteName ?? siteConfig.name;
-  const tagline = settings?.tagline ?? siteConfig.tagline;
   const description = settings?.defaultSeoDescription ?? siteConfig.description;
-  const title = `${websiteName} — ${tagline}`;
+  const title = settings?.defaultSeoTitle || `${websiteName} — ${settings?.tagline ?? siteConfig.tagline}`;
 
   return {
     metadataBase: new URL(siteConfig.url),
@@ -29,9 +27,9 @@ export async function generateMetadata(): Promise<Metadata> {
       "print design",
       "corporate gifts",
     ],
+    // Pages set their own canonical URL and openGraph.url (see pageMetadata()).
     openGraph: {
       type: "website",
-      url: siteConfig.url,
       siteName: websiteName,
       title,
       description,
@@ -41,13 +39,11 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
     },
-    alternates: {
-      canonical: siteConfig.url,
-    },
     robots: {
       index: settings?.robotsIndex ?? true,
       follow: settings?.robotsFollow ?? true,
     },
+    icons: settings?.faviconUrl ? { icon: settings.faviconUrl } : undefined,
     verification: settings?.googleVerification ? { google: settings.googleVerification } : undefined,
   };
 }

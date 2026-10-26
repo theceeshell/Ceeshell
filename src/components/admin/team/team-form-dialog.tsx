@@ -91,7 +91,7 @@ export function TeamFormDialog({ open, onOpenChange, initialValues, onSaved }: T
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Team Member" : "Add Team Member"}</DialogTitle>
-          <DialogDescription>Shown on the About page's team grid.</DialogDescription>
+          <DialogDescription>Shown on the About page&apos;s team grid.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

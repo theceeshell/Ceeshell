@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/cms/metadata";
+import { getSiteSettings } from "@/lib/cms/site-data";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "How Cee-Shell collects, uses and protects information submitted through this website.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
+    title: "Privacy Policy",
+    description: "How Cee-Shell collects, uses and protects information submitted through this website.",
+    path: "/privacy-policy",
+  });
+}
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const { email } = await getSiteSettings();
+
   return (
     <Section className="pt-40">
       <Container className="mx-auto max-w-3xl">
@@ -24,7 +31,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="font-heading text-2xl font-medium text-primary">How We Use Information</h2>
             <p className="mt-3">
-              Information submitted through this site is used solely to respond to inquiries, prepare proposals, deliver newsletter content you've opted into, and improve our services. We do not sell or rent your information to third parties.
+              Information submitted through this site is used solely to respond to inquiries, prepare proposals, deliver newsletter content you&apos;ve opted into, and improve our services. We do not sell or rent your information to third parties.
             </p>
           </section>
           <section>
@@ -42,13 +49,21 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="font-heading text-2xl font-medium text-primary">Your Rights</h2>
             <p className="mt-3">
-              You may request access to, correction of, or deletion of your personal information at any time by contacting hello@cee-shell.com.
+              You may request access to, correction of, or deletion of your personal information at any time by contacting{" "}
+              <a href={`mailto:${email}`} className="text-primary underline underline-offset-4">
+                {email}
+              </a>
+              .
             </p>
           </section>
           <section>
             <h2 className="font-heading text-2xl font-medium text-primary">Contact</h2>
             <p className="mt-3">
-              Questions about this policy can be directed to hello@cee-shell.com.
+              Questions about this policy can be directed to{" "}
+              <a href={`mailto:${email}`} className="text-primary underline underline-offset-4">
+                {email}
+              </a>
+              .
             </p>
           </section>
         </div>

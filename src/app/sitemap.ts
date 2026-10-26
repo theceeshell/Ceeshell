@@ -1,57 +1,32 @@
 import type { MetadataRoute } from "next";
+import { prisma } from "@/lib/db";
 import { siteConfig } from "@/lib/site-config";
-import { services } from "@/lib/data/services";
-import { portfolioProjects } from "@/lib/data/portfolio";
-import { industries } from "@/lib/data/industries";
-import { blogPosts } from "@/lib/data/blog";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const staticRoutes = [
-    "",
-    "/about",
-    "/services",
-    "/portfolio",
-    "/industries",
-    "/process",
-    "/blog",
-    "/contact",
-    "/faq",
-    "/privacy-policy",
-    "/terms",
-  ].map((path) => ({
-    url: `${siteConfig.url}${path}`,
-    lastModified: new Date(0),
-    changeFrequency: "monthly" as const,
-    priority: path === "" ? 1 : 0.8,
-  }));
+// Regenerated with the rest of the site whenever content changes (revalidateSite()).
+export const revalidate = 86400;
 
-  const serviceRoutes = services.map((service) => ({
-    url: `${siteConfig.url}/services/${service.slug}`,
-    lastModified: new Date(0),
-    changeFrequency: "monthly" as const,
-    priority: 0.7,
-  }));
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [pages, services, projects, industries, posts] = await Promise.all([
+    prisma.page.findMany({ select: { slug: true, updatedAt: true } }),
+    prisma.service.findMany({ select: { slug: true, updatedAt: true } }),
+    prisma.portfolioProject.findMany({ select: { slug: true, updatedAt: true } }),
+    prisma.industry.findMany({ select: { slug: true } }),
+    prisma.blogPost.findMany({ where: { status: "published" }, select: { slug: true, updatedAt: true } }),
+  ]);
 
-  const portfolioRoutes = portfolioProjects.map((project) => ({
-    url: `${siteConfig.url}/portfolio/${project.slug}`,
-    lastModified: new Date(0),
-    changeFrequency: "yearly" as const,
-    priority: 0.6,
-  }));
+  const url = (path: string) => `${siteConfig.url}${path}`;
 
-  const industryRoutes = industries.map((industry) => ({
-    url: `${siteConfig.url}/industries/${industry.slug}`,
-    lastModified: new Date(0),
-    changeFrequency: "yearly" as const,
-    priority: 0.6,
-  }));
-
-  const blogRoutes = blogPosts.map((post) => ({
-    url: `${siteConfig.url}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
-    changeFrequency: "yearly" as const,
-    priority: 0.5,
-  }));
-
-  return [...staticRoutes, ...serviceRoutes, ...portfolioRoutes, ...industryRoutes, ...blogRoutes];
+  return [
+    ...pages.map((page) => ({
+      url: url(page.slug === "home" ? "" : `/${page.slug}`),
+      lastModified: page.updatedAt,
+      priority: page.slug === "home" ? 1 : 0.8,
+    })),
+    ...services.map((s) => ({ url: url(`/services/${s.slug}`), lastModified: s.updatedAt, priority: 0.7 })),
+    ...projects.map((p) => ({ url: url(`/portfolio/${p.slug}`), lastModified: p.updatedAt, priority: 0.6 })),
+    ...industries.map((i) => ({ url: url(`/industries/${i.slug}`), priority: 0.6 })),
+    ...posts.map((p) => ({ url: url(`/blog/${p.slug}`), lastModified: p.updatedAt, priority: 0.5 })),
+    { url: url("/privacy-policy"), priority: 0.2 },
+    { url: url("/terms"), priority: 0.2 },
+  ];
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalUrlSchema } from "@/lib/validators/shared";
 
 export const siteSettingsSchema = z.object({
   websiteName: z.string().min(1, "Website name is required"),
@@ -9,15 +10,15 @@ export const siteSettingsSchema = z.object({
   whatsapp: z.string().min(1, "WhatsApp is required"),
   address: z.string().min(1, "Address is required"),
   businessHours: z.string().min(1, "Business hours are required"),
-  googleMapsUrl: z.string().min(1, "Google Maps URL is required"),
+  googleMapsUrl: z.string().trim().regex(/^https:\/\//i, "Enter a full URL starting with https://"),
   socialLinks: z.object({
-    instagram: z.string().optional(),
-    linkedin: z.string().optional(),
-    behance: z.string().optional(),
-    pinterest: z.string().optional(),
-    facebook: z.string().optional(),
-    tiktok: z.string().optional(),
-    youtube: z.string().optional(),
+    instagram: optionalUrlSchema,
+    linkedin: optionalUrlSchema,
+    behance: optionalUrlSchema,
+    pinterest: optionalUrlSchema,
+    facebook: optionalUrlSchema,
+    tiktok: optionalUrlSchema,
+    youtube: optionalUrlSchema,
   }),
   logoUrl: z.string().optional(),
   footerLogoUrl: z.string().optional(),

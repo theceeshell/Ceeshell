@@ -13,7 +13,26 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { uploadMediaAction } from "@/lib/actions/media-actions";
+import { createMediaUploadAction, finalizeMediaUploadAction } from "@/lib/actions/media-actions";
+
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+const MAX_BYTES = 10 * 1024 * 1024;
+
+/** Uploads one file straight to Storage via a signed URL, then registers it. Returns an error message or null. */
+async function uploadOne(file: File, folder: string): Promise<string | null> {
+  const ticket = await createMediaUploadAction({ filename: file.name, size: file.size, type: file.type, folder });
+  if ("error" in ticket) return ticket.error;
+
+  const res = await fetch(ticket.uploadUrl, {
+    method: "PUT",
+    headers: { "content-type": file.type, "x-upsert": "false" },
+    body: file,
+  });
+  if (!res.ok) return `${file.name}: upload failed (${res.status})`;
+
+  const result = await finalizeMediaUploadAction({ path: ticket.path, filename: file.name });
+  return result?.error ?? null;
+}
 
 interface UploadDialogProps {
   open: boolean;
@@ -46,14 +65,14 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     const accepted: File[] = [];
     const rejected: string[] = [];
     for (const file of incoming) {
-      if (file.type.startsWith("image/")) {
+      if (ACCEPTED_TYPES.includes(file.type) && file.size <= MAX_BYTES) {
         accepted.push(file);
       } else {
         rejected.push(file.name);
       }
     }
     if (rejected.length > 0) {
-      toast.error(`Not an image, skipped: ${rejected.join(", ")}`);
+      toast.error(`Skipped (not a JPEG/PNG/WebP/GIF/AVIF image under 10 MB): ${rejected.join(", ")}`);
     }
     if (accepted.length > 0) {
       setFiles((prev) => [...prev, ...accepted]);
@@ -84,18 +103,28 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
     if (files.length === 0) return;
     setUploading(true);
     try {
-      const formData = new FormData();
+      const failed: File[] = [];
       for (const file of files) {
-        formData.append("files", file);
+        const error = await uploadOne(file, folder.trim() || "general");
+        if (error) {
+          failed.push(file);
+          toast.error(error);
+        }
       }
-      formData.append("folder", folder.trim() || "general");
-      const created = await uploadMediaAction(formData);
-      toast.success(`${created.length} file${created.length === 1 ? "" : "s"} uploaded`);
-      reset();
-      onOpenChange(false);
-      onUploaded();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
+      const uploaded = files.length - failed.length;
+      if (uploaded > 0) {
+        toast.success(`${uploaded} file${uploaded === 1 ? "" : "s"} uploaded`);
+        onUploaded();
+      }
+      if (failed.length === 0) {
+        reset();
+        onOpenChange(false);
+      } else {
+        // Keep only what failed so a retry doesn't re-upload the rest.
+        setFiles(failed);
+      }
+    } catch {
+      toast.error("Upload failed — please try again.");
     } finally {
       setUploading(false);
     }
@@ -139,11 +168,11 @@ export function UploadDialog({ open, onOpenChange, onUploaded }: UploadDialogPro
             <p className="text-sm text-text">
               <span className="font-semibold text-primary">Click to browse</span> or drag and drop images here
             </p>
-            <p className="text-xs text-muted">JPEG, PNG, WEBP, GIF</p>
+            <p className="text-xs text-muted">JPEG, PNG, WebP, GIF or AVIF · up to 10 MB each</p>
             <input
               ref={inputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept={ACCEPTED_TYPES.join(",")}
               multiple
               className="hidden"
               onChange={(e) => {

@@ -28,7 +28,7 @@ export interface InquiryRow {
   service: string | null;
   industry: string | null;
   message: string;
-  attachmentUrl: string | null;
+  attachmentPath: string | null;
   status: string;
   createdAt: string | Date;
 }

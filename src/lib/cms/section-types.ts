@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hrefSchema } from "@/lib/validators/shared";
 
 /**
  * Every section on the site is one of these types. Each type's `content`
@@ -34,7 +35,7 @@ export const SECTION_TYPES = [
 
 export type SectionType = (typeof SECTION_TYPES)[number]["type"];
 
-const button = z.object({ label: z.string().min(1), href: z.string().min(1) });
+const button = z.object({ label: z.string().min(1), href: hrefSchema });
 
 export const heroSchema = z.object({
   variant: z.enum(["home", "page"]).default("page"),
@@ -84,7 +85,7 @@ export const cardItemSchema = z.object({
   icon: z.string().optional(),
   imageUrl: z.string().optional(),
   buttonLabel: z.string().optional(),
-  buttonHref: z.string().optional(),
+  buttonHref: hrefSchema.optional(),
 });
 
 export const cardsSchema = z.object({

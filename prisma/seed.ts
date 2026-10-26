@@ -23,18 +23,24 @@ const TEAM_NAME_OVERRIDES: Record<string, { name: string; initials: string }> = 
   "Tomas Berg": { name: "Usman Farooq", initials: "UF" },
 };
 
-const BUDGET_RANGES = [
-  "Under PKR 150,000",
-  "PKR 150,000 – 500,000",
-  "PKR 500,000 – 1,500,000",
-  "PKR 1,500,000 – 4,000,000",
-  "PKR 4,000,000+",
-];
-
 async function main() {
+  // The seed wipes and recreates all CMS content. Refuse to run against a
+  // database that already has content unless explicitly forced.
+  const existingPages = await prisma.page.count();
+  if (existingPages > 0 && !process.argv.includes("--force")) {
+    console.error(
+      `This database already has ${existingPages} pages of content; seeding would DELETE all CMS edits.\n` +
+        "If that's really what you want, run: npm run db:seed -- --force"
+    );
+    process.exit(1);
+  }
+
   console.log("Seeding admin user…");
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@cee-shell.com";
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
+  const adminEmail = process.env.SEED_ADMIN_EMAIL;
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword || adminPassword.length < 12) {
+    throw new Error("Set SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD (12+ characters) before seeding.");
+  }
   await prisma.user.upsert({
     where: { email: adminEmail },
     update: {},
@@ -740,10 +746,7 @@ async function main() {
     ],
   });
 
-  console.log("\nDone. Admin login:");
-  console.log(`  email:    ${adminEmail}`);
-  console.log(`  password: ${adminPassword}`);
-  console.log("Change this password after first login.");
+  console.log(`\nDone. Admin login: ${adminEmail} (password from SEED_ADMIN_PASSWORD).`);
 }
 
 main()

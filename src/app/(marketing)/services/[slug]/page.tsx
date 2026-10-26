@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { cache } from "react";
+import Image from "@/components/ui/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { pageMetadata } from "@/lib/cms/metadata";
 import { PageHero } from "@/components/shared/page-hero";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -18,19 +20,23 @@ export async function generateStaticParams() {
   return services.map((service) => ({ slug: service.slug }));
 }
 
+const getService = cache((slug: string) => prisma.service.findUnique({ where: { slug } }));
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const service = await prisma.service.findUnique({ where: { slug } });
+  const service = await getService(slug);
   if (!service) return {};
-  return {
+  return pageMetadata({
     title: service.seoTitle || service.name,
     description: service.seoDescription || service.summary,
-  };
+    path: `/services/${service.slug}`,
+    image: service.heroImageUrl,
+  });
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = await prisma.service.findUnique({ where: { slug } });
+  const service = await getService(slug);
   if (!service) notFound();
 
   const otherServices = await prisma.service.findMany({ where: { slug: { not: service.slug } }, orderBy: { order: "asc" } });

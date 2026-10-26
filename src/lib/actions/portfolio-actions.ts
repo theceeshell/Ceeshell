@@ -1,59 +1,57 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth/require-session";
+import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { portfolioProjectSchema, type PortfolioProjectFormValues } from "@/lib/validators/portfolio";
 
-function revalidatePortfolioSurfaces(slug?: string) {
-  revalidatePath("/admin/portfolio");
-  revalidatePath("/portfolio");
-  if (slug) revalidatePath(`/portfolio/${slug}`);
-}
-
-export async function createPortfolioProjectAction(values: PortfolioProjectFormValues) {
+export async function createPortfolioProjectAction(values: PortfolioProjectFormValues): Promise<ActionResult> {
   await requireSession();
   const { industryIds, testimonialId, ...rest } = portfolioProjectSchema.parse(values);
   const maxOrder = await prisma.portfolioProject.aggregate({ _max: { order: true } });
-  const created = await prisma.portfolioProject.create({
-    data: {
-      ...rest,
-      testimonialId: testimonialId || null,
-      order: (maxOrder._max.order ?? -1) + 1,
-      industries: industryIds.length ? { connect: industryIds.map((id) => ({ id })) } : undefined,
-    },
-  });
-  revalidatePortfolioSurfaces(created.slug);
-  return created;
+  const result = await withSlugCheck(() =>
+    prisma.portfolioProject.create({
+      data: {
+        ...rest,
+        testimonialId: testimonialId || null,
+        order: (maxOrder._max.order ?? -1) + 1,
+        industries: industryIds.length ? { connect: industryIds.map((id) => ({ id })) } : undefined,
+      },
+    })
+  );
+  if (!result) revalidateSite();
+  return result;
 }
 
-export async function updatePortfolioProjectAction(id: string, values: PortfolioProjectFormValues) {
+export async function updatePortfolioProjectAction(id: string, values: PortfolioProjectFormValues): Promise<ActionResult> {
   await requireSession();
   const { industryIds, testimonialId, ...rest } = portfolioProjectSchema.parse(values);
-  const updated = await prisma.portfolioProject.update({
-    where: { id },
-    data: {
-      ...rest,
-      testimonialId: testimonialId || null,
-      industries: { set: industryIds.map((id) => ({ id })) },
-    },
-  });
-  revalidatePortfolioSurfaces(updated.slug);
-  return updated;
+  const result = await withSlugCheck(() =>
+    prisma.portfolioProject.update({
+      where: { id },
+      data: {
+        ...rest,
+        testimonialId: testimonialId || null,
+        industries: { set: industryIds.map((id) => ({ id })) },
+      },
+    })
+  );
+  if (!result) revalidateSite();
+  return result;
 }
 
 export async function deletePortfolioProjectAction(id: string) {
   await requireSession();
-  const deleted = await prisma.portfolioProject.delete({ where: { id } });
-  revalidatePortfolioSurfaces(deleted.slug);
+  await prisma.portfolioProject.delete({ where: { id } });
+  revalidateSite();
 }
 
 export async function reorderPortfolioProjectsAction(orderedIds: string[]) {
   await requireSession();
-  await Promise.all(
+  await prisma.$transaction(
     orderedIds.map((id, index) => prisma.portfolioProject.update({ where: { id }, data: { order: index } }))
   );
-  revalidatePortfolioSurfaces();
+  revalidateSite();
 }
 
 async function generateCopySlug(baseSlug: string) {
@@ -77,7 +75,7 @@ export async function duplicatePortfolioProjectAction(id: string) {
   const slug = await generateCopySlug(original.slug);
   const maxOrder = await prisma.portfolioProject.aggregate({ _max: { order: true } });
 
-  const created = await prisma.portfolioProject.create({
+  await prisma.portfolioProject.create({
     data: {
       slug,
       title: `${original.title} (Copy)`,
@@ -108,6 +106,5 @@ export async function duplicatePortfolioProjectAction(id: string) {
         : undefined,
     },
   });
-  revalidatePortfolioSurfaces(created.slug);
-  return created;
+  revalidateSite();
 }

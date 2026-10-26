@@ -19,6 +19,9 @@ const timelines = ["As soon as possible", "Within 1 month", "1 – 3 months", "3
 
 const initialState: InquiryState = {};
 
+const ATTACHMENT_ACCEPT = ".pdf,.jpg,.jpeg,.png,.webp,.docx,.pptx";
+const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+
 export interface ContactFormOption {
   slug: string;
   label: string;
@@ -32,6 +35,7 @@ interface ContactFormProps {
 export function ContactForm({ industries, services }: ContactFormProps) {
   const [state, formAction, isPending] = useActionState(submitInquiryAction, initialState);
   const [fileName, setFileName] = React.useState<string | null>(null);
+  const [fileError, setFileError] = React.useState<string | null>(null);
 
   if (state.success) {
     return (
@@ -47,6 +51,12 @@ export function ContactForm({ industries, services }: ContactFormProps) {
 
   return (
     <form action={formAction} className="space-y-8">
+      {/* Honeypot: hidden from people and assistive tech, but bots fill it in. */}
+      <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <Field label="Full Name" htmlFor="name">
           <Input id="name" name="name" required placeholder="Jane Cooper" />
@@ -136,15 +146,27 @@ export function ContactForm({ industries, services }: ContactFormProps) {
           className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-white px-4 py-3.5 text-sm text-muted transition-colors hover:border-secondary"
         >
           <UploadCloud className="h-4 w-4 shrink-0" />
-          {fileName ?? "Attach a brief, brand deck or reference images"}
+          {fileName ?? "Attach a brief, brand deck or reference image (PDF, DOCX, PPTX, JPG, PNG · max 4 MB)"}
         </label>
         <input
           id="file"
           name="file"
           type="file"
+          accept={ATTACHMENT_ACCEPT}
           className="sr-only"
-          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && file.size > MAX_ATTACHMENT_BYTES) {
+              e.target.value = "";
+              setFileName(null);
+              setFileError("That file is larger than 4 MB. Please attach a smaller file or send it by email.");
+              return;
+            }
+            setFileError(null);
+            setFileName(file?.name ?? null);
+          }}
         />
+        {fileError && <p className="text-sm text-red-700">{fileError}</p>}
       </Field>
 
       {state.error && (

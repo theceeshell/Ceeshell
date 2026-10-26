@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth/require-session";
+import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
+import { sanitizeBlogHtml } from "@/lib/cms/html";
 import { blogPostSchema, type BlogPostFormValues } from "@/lib/validators/blog";
 
 /** contentJson/contentHtml are Tiptap editor output, not simple form fields, so they're typed loosely here rather than folded into blogPostSchema. */
@@ -11,15 +12,16 @@ export interface BlogPostActionInput extends BlogPostFormValues {
   contentHtml: string;
 }
 
-function revalidateBlogSurfaces(slug?: string) {
-  revalidatePath("/admin/blog");
-  revalidatePath("/blog");
-  if (slug) revalidatePath(`/blog/${slug}`);
-}
+/** Validates the form fields and sanitizes the client-supplied HTML (never trust it as-is). */
+function parseInput(values: BlogPostActionInput) {
+  const { contentJson, contentHtml, ...rest } = values;
+  const data = blogPostSchema.parse(rest);
+  if (typeof contentJson !== "object" || contentJson === null) throw new Error("Invalid content");
 
-function assertContentNotEmpty(contentHtml: string) {
-  const text = contentHtml.replace(/<[^>]+>/g, "").trim();
-  if (!text) throw new Error("Content can't be empty");
+  const html = sanitizeBlogHtml(contentHtml);
+  if (!html.replace(/<[^>]+>/g, "").trim()) throw new Error("Content can't be empty");
+
+  return { ...data, contentJson, contentHtml: html, publishDate: new Date(data.publishDate) };
 }
 
 async function uniqueSlug(base: string) {
@@ -32,49 +34,26 @@ async function uniqueSlug(base: string) {
   return candidate;
 }
 
-export async function createBlogPostAction(values: BlogPostActionInput) {
+export async function createBlogPostAction(values: BlogPostActionInput): Promise<ActionResult> {
   await requireSession();
-  const { contentJson, contentHtml, ...rest } = values;
-  const data = blogPostSchema.parse(rest);
-  assertContentNotEmpty(contentHtml);
-
-  const created = await prisma.blogPost.create({
-    data: {
-      ...data,
-      tags: data.tags,
-      contentJson,
-      contentHtml,
-      publishDate: new Date(data.publishDate),
-    },
-  });
-  revalidateBlogSurfaces(created.slug);
-  return created;
+  const data = parseInput(values);
+  const result = await withSlugCheck(() => prisma.blogPost.create({ data }));
+  if (!result) revalidateSite();
+  return result;
 }
 
-export async function updateBlogPostAction(id: string, values: BlogPostActionInput) {
+export async function updateBlogPostAction(id: string, values: BlogPostActionInput): Promise<ActionResult> {
   await requireSession();
-  const { contentJson, contentHtml, ...rest } = values;
-  const data = blogPostSchema.parse(rest);
-  assertContentNotEmpty(contentHtml);
-
-  const updated = await prisma.blogPost.update({
-    where: { id },
-    data: {
-      ...data,
-      tags: data.tags,
-      contentJson,
-      contentHtml,
-      publishDate: new Date(data.publishDate),
-    },
-  });
-  revalidateBlogSurfaces(updated.slug);
-  return updated;
+  const data = parseInput(values);
+  const result = await withSlugCheck(() => prisma.blogPost.update({ where: { id }, data }));
+  if (!result) revalidateSite();
+  return result;
 }
 
 export async function deleteBlogPostAction(id: string) {
   await requireSession();
-  const deleted = await prisma.blogPost.delete({ where: { id } });
-  revalidateBlogSurfaces(deleted.slug);
+  await prisma.blogPost.delete({ where: { id } });
+  revalidateSite();
 }
 
 export async function duplicateBlogPostAction(id: string) {
@@ -83,7 +62,7 @@ export async function duplicateBlogPostAction(id: string) {
   if (!original) throw new Error("Blog post not found");
 
   const slug = await uniqueSlug(`${original.slug}-copy`);
-  const created = await prisma.blogPost.create({
+  await prisma.blogPost.create({
     data: {
       title: `${original.title} (Copy)`,
       slug,
@@ -93,7 +72,7 @@ export async function duplicateBlogPostAction(id: string) {
       tags: original.tags as string[],
       excerpt: original.excerpt,
       contentJson: original.contentJson as object,
-      contentHtml: original.contentHtml,
+      contentHtml: sanitizeBlogHtml(original.contentHtml),
       publishDate: original.publishDate,
       status: "draft",
       featured: false,
@@ -101,6 +80,5 @@ export async function duplicateBlogPostAction(id: string) {
       seoDescription: original.seoDescription,
     },
   });
-  revalidateBlogSurfaces(created.slug);
-  return created;
+  revalidateSite();
 }

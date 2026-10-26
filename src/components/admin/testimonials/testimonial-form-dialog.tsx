@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, Star } from "lucide-react";
@@ -48,11 +48,10 @@ export function TestimonialFormDialog({ open, onOpenChange, initialValues, onSav
     handleSubmit,
     reset,
     control,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<TestimonialFormValues>({ resolver: zodResolver(testimonialSchema), defaultValues: emptyValues });
 
-  const rating = watch("rating");
+  const rating = useWatch({ control, name: "rating" });
 
   React.useEffect(() => {
     if (open) {

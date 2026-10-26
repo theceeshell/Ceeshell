@@ -8,7 +8,11 @@ export async function requireSession() {
   return session;
 }
 
-/** Throws unless the current session belongs to an ADMIN (not EDITOR). */
+/**
+ * Throws unless the current session belongs to an ADMIN (not EDITOR). EDITORs
+ * manage content; site-wide settings, SEO, navigation, footer and users are
+ * admin-only.
+ */
 export async function requireAdmin() {
   const session = await requireSession();
   if (session.role !== "ADMIN") throw new Error("Admins only");

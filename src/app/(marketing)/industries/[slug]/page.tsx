@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { pageMetadata } from "@/lib/cms/metadata";
 import { PageHero } from "@/components/shared/page-hero";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -16,19 +18,23 @@ export async function generateStaticParams() {
   return industries.map((industry) => ({ slug: industry.slug }));
 }
 
+const getIndustry = cache((slug: string) =>
+  prisma.industry.findUnique({
+    where: { slug },
+    include: { relatedProjects: { orderBy: { order: "asc" } } },
+  })
+);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const industry = await prisma.industry.findUnique({ where: { slug } });
+  const industry = await getIndustry(slug);
   if (!industry) return {};
-  return { title: industry.name, description: industry.summary };
+  return pageMetadata({ title: industry.name, description: industry.summary, path: `/industries/${industry.slug}` });
 }
 
 export default async function IndustryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const industry = await prisma.industry.findUnique({
-    where: { slug },
-    include: { relatedProjects: { orderBy: { order: "asc" } } },
-  });
+  const industry = await getIndustry(slug);
   if (!industry) notFound();
 
   const painPoints = industry.painPoints as string[];

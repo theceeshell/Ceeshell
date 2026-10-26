@@ -46,8 +46,8 @@ next-env.d.ts
 *.db
 *.db-journal
 
-# user-uploaded media (not source-controlled)
-/public/uploads
+# local secrets (API tokens) -- never commit
+/Tokens/
 
 # AI agent skill docs auto-installed by `prisma init` (not project source)
 /.agents/

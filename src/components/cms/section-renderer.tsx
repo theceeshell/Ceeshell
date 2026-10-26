@@ -1,3 +1,4 @@
+import type { Faq, Industry, TeamMember } from "@/generated/prisma/client";
 import type { ResolvedSection } from "@/lib/cms/resolve-section";
 import { toProjectCard, toTestimonialCard, toServiceCard, toBlogCard } from "@/lib/cms/adapters";
 
@@ -30,6 +31,9 @@ interface SectionRendererProps {
 }
 
 export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererProps) {
+  // Content is validated against SECTION_SCHEMAS when saved and enriched by
+  // resolveSectionContent(), so it's treated as trusted, loosely-typed JSON here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const c = section.content as Record<string, any>;
 
   switch (section.type) {
@@ -111,7 +115,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
       );
 
     case "richText":
-      return <RichTextSection {...(c as any)} />;
+      return <RichTextSection {...(c as React.ComponentProps<typeof RichTextSection>)} />;
 
     case "timeline":
       return <TimelineSection eyebrow={c.eyebrow} heading={c.heading} layout={c.layout} items={c.items} />;
@@ -121,7 +125,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
         <TeamShowcase
           eyebrow={c.eyebrow}
           heading={c.heading}
-          members={(c.members ?? []).map((m: any) => ({ name: m.name, position: m.position, bio: m.bio }))}
+          members={((c.members ?? []) as TeamMember[]).map((m) => ({ name: m.name, position: m.position, bio: m.bio, photoUrl: m.photoUrl }))}
         />
       );
 
@@ -130,7 +134,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
         <FaqSection
           eyebrow={c.eyebrow}
           heading={c.heading}
-          faqs={(c.faqs ?? []).map((f: any) => ({ id: f.id, question: f.question, answer: f.answer }))}
+          faqs={((c.faqs ?? []) as Faq[]).map((f) => ({ id: f.id, question: f.question, answer: f.answer }))}
           layout={c.layout}
         />
       );
@@ -142,7 +146,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           heading={c.heading}
           description={c.description}
           showMap={c.showMap}
-          faqs={(c.faqs ?? []).map((f: any) => ({ id: f.id, question: f.question, answer: f.answer }))}
+          faqs={((c.faqs ?? []) as Faq[]).map((f) => ({ id: f.id, question: f.question, answer: f.answer }))}
           siteSettings={c.siteSettings}
         />
       );
@@ -153,7 +157,7 @@ export function SectionRenderer({ section, breadcrumbLabel }: SectionRendererPro
           eyebrow={c.eyebrow}
           heading={c.heading}
           description={c.description}
-          industries={(c.industries ?? []).map((i: any) => ({ slug: i.slug, name: i.name, heroImageUrl: i.heroImageUrl }))}
+          industries={((c.industries ?? []) as Industry[]).map((i) => ({ slug: i.slug, name: i.name, heroImageUrl: i.heroImageUrl }))}
         />
       );
 

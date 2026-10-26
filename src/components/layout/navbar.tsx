@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,8 @@ interface NavbarProps {
 export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
+  const pathname = usePathname();
+  const isCurrent = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -35,8 +38,14 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
 
   React.useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
 
@@ -74,6 +83,8 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
                 key={item.href}
                 href={item.href}
                 target={item.openNewTab ? "_blank" : undefined}
+                rel={item.openNewTab ? "noopener noreferrer" : undefined}
+                aria-current={isCurrent(item.href) ? "page" : undefined}
                 className={cn(
                   "text-[0.8rem] font-semibold uppercase tracking-[0.12em] transition-colors duration-300",
                   solid ? "text-text hover:text-secondary" : "text-white/85 hover:text-white"
@@ -93,6 +104,7 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
           <button
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
+            aria-controls="mobile-menu"
             onClick={() => setOpen((v) => !v)}
             className={cn(
               "relative z-10 flex h-11 w-11 items-center justify-center rounded-full transition-colors lg:hidden",
@@ -111,6 +123,10 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
             animate={{ clipPath: "circle(150% at 100% 0%)" }}
             exit={{ clipPath: "circle(0% at 100% 0%)" }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            id="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site menu"
             className="fixed inset-0 z-40 flex flex-col justify-between bg-primary px-6 pb-10 pt-28 text-white sm:px-12"
           >
             <nav className="flex flex-col gap-1">
@@ -124,6 +140,8 @@ export function Navbar({ websiteName, navItems, email, phone, logoUrl }: NavbarP
                   <Link
                     href={item.href}
                     target={item.openNewTab ? "_blank" : undefined}
+                    rel={item.openNewTab ? "noopener noreferrer" : undefined}
+                    aria-current={isCurrent(item.href) ? "page" : undefined}
                     onClick={() => setOpen(false)}
                     className="group flex items-center justify-between border-b border-white/10 py-4 font-heading text-4xl font-medium sm:text-5xl"
                   >

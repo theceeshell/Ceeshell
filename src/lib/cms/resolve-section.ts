@@ -1,5 +1,7 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
+import { getSiteSettings } from "@/lib/cms/site-data";
 import type { SectionType } from "@/lib/cms/section-types";
 
 function byIdOrder<T extends { id: string }>(rows: T[], ids: string[]): T[] {
@@ -86,7 +88,7 @@ export async function resolveSectionContent(section: {
         ids.length > 0
           ? byIdOrder(await prisma.faq.findMany({ where: { id: { in: ids } } }), ids)
           : prisma.faq.findMany({ orderBy: { order: "asc" }, take: 5 }),
-        prisma.siteSettings.findUnique({ where: { id: "singleton" } }),
+        getSiteSettings().catch(() => null),
       ]);
       return {
         ...content,
@@ -98,7 +100,7 @@ export async function resolveSectionContent(section: {
               address: settings.address,
               businessHours: settings.businessHours,
               googleMapsUrl: settings.googleMapsUrl,
-              socialLinks: settings.socialLinks as Record<string, string>,
+              socialLinks: settings.socialLinks,
             }
           : null,
       };
@@ -117,7 +119,7 @@ export async function resolveSectionContent(section: {
       const ids = (content.postIds as string[]) ?? [];
       const rows =
         ids.length > 0
-          ? byIdOrder(await prisma.blogPost.findMany({ where: { id: { in: ids } } }), ids)
+          ? byIdOrder(await prisma.blogPost.findMany({ where: { id: { in: ids }, status: "published" } }), ids)
           : await prisma.blogPost.findMany({ where: { status: "published" }, orderBy: { publishDate: "desc" } });
       return { ...content, posts: rows };
     }
@@ -127,7 +129,8 @@ export async function resolveSectionContent(section: {
   }
 }
 
-export async function getPageWithSections(slug: string) {
+/** Memoized per render: generateMetadata and the page both call this. */
+export const getPageWithSections = cache(async (slug: string) => {
   const page = await prisma.page.findUnique({
     where: { slug },
     include: { sections: { where: { enabled: true }, orderBy: { order: "asc" } } },
@@ -144,4 +147,4 @@ export async function getPageWithSections(slug: string) {
   );
 
   return { ...page, resolvedSections };
-}
+});

@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth/require-session";
+import { requireAdmin } from "@/lib/auth/require-session";
+import { revalidateSite } from "@/lib/actions/helpers";
 import {
   siteSettingsSchema,
   seoSettingsSchema,
@@ -11,23 +11,15 @@ import {
 } from "@/lib/validators/site-settings";
 
 export async function updateSiteSettingsAction(values: SiteSettingsFormValues) {
-  await requireSession();
+  await requireAdmin();
   const data = siteSettingsSchema.parse(values);
-  await prisma.siteSettings.update({
-    where: { id: "singleton" },
-    data: { ...data, socialLinks: data.socialLinks },
-  });
-  revalidatePath("/admin/settings");
-  revalidatePath("/", "layout");
+  await prisma.siteSettings.update({ where: { id: "singleton" }, data });
+  revalidateSite();
 }
 
 export async function updateSeoSettingsAction(values: SeoSettingsFormValues) {
-  await requireSession();
+  await requireAdmin();
   const data = seoSettingsSchema.parse(values);
-  await prisma.siteSettings.update({
-    where: { id: "singleton" },
-    data,
-  });
-  revalidatePath("/admin/seo");
-  revalidatePath("/", "layout");
+  await prisma.siteSettings.update({ where: { id: "singleton" }, data });
+  revalidateSite();
 }

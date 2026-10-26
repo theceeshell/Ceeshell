@@ -4,120 +4,92 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth/require-session";
 import { hashPassword } from "@/lib/auth/password";
+import { isUniqueViolation, type ActionResult } from "@/lib/actions/helpers";
 import { createUserSchema, updateUserSchema, type CreateUserFormValues, type UpdateUserFormValues } from "@/lib/validators/user";
 
-function revalidateUserSurfaces() {
-  revalidatePath("/admin/users");
+const EMAIL_IN_USE = "A user with that email already exists.";
+const LAST_ADMIN = "You can't remove the last active administrator.";
+
+/** True if changing `target` to `nextRole`/`nextActive` would leave the site with zero active admins. */
+async function wouldRemoveLastAdmin(target: { role: string; active: boolean }, nextRole: string, nextActive: boolean) {
+  const willRemainActiveAdmin = nextRole === "ADMIN" && nextActive;
+  if (target.role !== "ADMIN" || !target.active || willRemainActiveAdmin) return false;
+  const adminCount = await prisma.user.count({ where: { role: "ADMIN", active: true } });
+  return adminCount <= 1;
 }
 
-/**
- * Throws if deactivating/demoting `targetId` (from its current state to the
- * given `nextRole`/`nextActive`) would leave the site with zero active admins.
- */
-async function assertNotRemovingLastAdmin(
-  target: { role: string; active: boolean },
-  nextRole: "ADMIN" | "EDITOR",
-  nextActive: boolean
-) {
-  const willRemainActiveAdmin = nextRole === "ADMIN" && nextActive === true;
-  if (target.role === "ADMIN" && target.active && !willRemainActiveAdmin) {
-    const adminCount = await prisma.user.count({ where: { role: "ADMIN", active: true } });
-    if (adminCount === 1) {
-      throw new Error("You can't remove the last active administrator.");
-    }
-  }
-}
-
-export async function createUserAction(values: CreateUserFormValues) {
+export async function createUserAction(values: CreateUserFormValues): Promise<ActionResult> {
   await requireAdmin();
   const data = createUserSchema.parse(values);
 
-  const email = data.email.toLowerCase();
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    throw new Error("A user with that email already exists.");
+  try {
+    await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email.toLowerCase(),
+        passwordHash: await hashPassword(data.password),
+        role: data.role,
+        active: data.active,
+      },
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) return { error: EMAIL_IN_USE };
+    throw error;
   }
 
-  const passwordHash = await hashPassword(data.password);
-  await prisma.user.create({
-    data: {
-      name: data.name,
-      email,
-      passwordHash,
-      role: data.role,
-      active: data.active,
-    },
-  });
-
-  revalidateUserSurfaces();
+  revalidatePath("/admin/users");
 }
 
-export async function updateUserAction(id: string, values: UpdateUserFormValues) {
+export async function updateUserAction(id: string, values: UpdateUserFormValues): Promise<ActionResult> {
   await requireAdmin();
   const data = updateUserSchema.parse(values);
 
   const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) {
-    throw new Error("User not found.");
+  if (!existing) return { error: "User not found." };
+  if (await wouldRemoveLastAdmin(existing, data.role, data.active)) return { error: LAST_ADMIN };
+
+  // Any change to credentials or privileges signs the user out everywhere.
+  const revokeSessions = Boolean(data.password) || data.role !== existing.role || data.active !== existing.active;
+
+  try {
+    await prisma.user.update({
+      where: { id },
+      data: {
+        name: data.name,
+        email: data.email.toLowerCase(),
+        role: data.role,
+        active: data.active,
+        ...(data.password ? { passwordHash: await hashPassword(data.password) } : {}),
+        ...(revokeSessions ? { sessionVersion: { increment: 1 } } : {}),
+      },
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) return { error: EMAIL_IN_USE };
+    throw error;
   }
 
-  const email = data.email.toLowerCase();
-  if (email !== existing.email) {
-    const emailInUse = await prisma.user.findUnique({ where: { email } });
-    if (emailInUse) {
-      throw new Error("A user with that email already exists.");
-    }
-  }
-
-  await assertNotRemovingLastAdmin(existing, data.role, data.active);
-
-  await prisma.user.update({
-    where: { id },
-    data: {
-      name: data.name,
-      email,
-      role: data.role,
-      active: data.active,
-      ...(data.password ? { passwordHash: await hashPassword(data.password) } : {}),
-    },
-  });
-
-  revalidateUserSurfaces();
+  revalidatePath("/admin/users");
 }
 
-export async function deleteUserAction(id: string) {
+export async function deleteUserAction(id: string): Promise<ActionResult> {
   const session = await requireAdmin();
-
-  if (id === session.userId) {
-    throw new Error("You can't delete your own account.");
-  }
+  if (id === session.userId) return { error: "You can't delete your own account." };
 
   const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) {
-    throw new Error("User not found.");
-  }
-
-  if (existing.role === "ADMIN" && existing.active) {
-    const adminCount = await prisma.user.count({ where: { role: "ADMIN", active: true } });
-    if (adminCount === 1) {
-      throw new Error("You can't remove the last active administrator.");
-    }
-  }
+  if (!existing) return { error: "User not found." };
+  if (await wouldRemoveLastAdmin(existing, "EDITOR", false)) return { error: LAST_ADMIN };
 
   await prisma.user.delete({ where: { id } });
-  revalidateUserSurfaces();
+  revalidatePath("/admin/users");
 }
 
-export async function toggleUserActiveAction(id: string, active: boolean) {
+export async function toggleUserActiveAction(id: string, active: boolean): Promise<ActionResult> {
   await requireAdmin();
 
   const existing = await prisma.user.findUnique({ where: { id } });
-  if (!existing) {
-    throw new Error("User not found.");
-  }
+  if (!existing) return { error: "User not found." };
+  if (await wouldRemoveLastAdmin(existing, existing.role, active)) return { error: LAST_ADMIN };
 
-  await assertNotRemovingLastAdmin(existing, existing.role as "ADMIN" | "EDITOR", active);
-
-  await prisma.user.update({ where: { id }, data: { active } });
-  revalidateUserSurfaces();
+  await prisma.user.update({ where: { id }, data: { active, sessionVersion: { increment: 1 } } });
+  revalidatePath("/admin/users");
 }

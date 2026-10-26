@@ -1,8 +1,13 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { MotionProvider } from "@/components/shared/motion-provider";
 import { getSiteSettings, getFooterConfig, getNavigationItems } from "@/lib/cms/site-data";
+import { jsonLd } from "@/lib/cms/html";
+import { siteConfig } from "@/lib/site-config";
 
-export const dynamic = "force-dynamic";
+// Public pages are statically rendered and served from Vercel's cache. Admin
+// edits purge them on demand (revalidateSite()); this is only a daily safety net.
+export const revalidate = 86400;
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [settings, footer, navItems] = await Promise.all([getSiteSettings(), getFooterConfig(), getNavigationItems()]);
@@ -11,6 +16,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
     name: settings.companyName,
+    url: siteConfig.url,
     description: settings.defaultSeoDescription,
     email: settings.email,
     telephone: settings.phone,
@@ -18,14 +24,14 @@ export default async function MarketingLayout({ children }: { children: React.Re
       "@type": "PostalAddress",
       streetAddress: settings.address,
     },
-    sameAs: Object.values(settings.socialLinks),
+    sameAs: Object.values(settings.socialLinks).filter(Boolean),
   };
 
   return (
-    <>
+    <MotionProvider>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd) }}
       />
       <a
         href="#main-content"
@@ -54,6 +60,6 @@ export default async function MarketingLayout({ children }: { children: React.Re
         termsHref={footer.termsHref}
         logoUrl={settings.footerLogoUrl ?? settings.logoUrl}
       />
-    </>
+    </MotionProvider>
   );
 }

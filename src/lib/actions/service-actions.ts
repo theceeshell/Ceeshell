@@ -1,43 +1,39 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/auth/require-session";
+import { revalidateSite, withSlugCheck, type ActionResult } from "@/lib/actions/helpers";
 import { serviceSchema, type ServiceFormValues } from "@/lib/validators/service";
 
-function revalidateServiceSurfaces(slug?: string) {
-  revalidatePath("/admin/services");
-  revalidatePath("/services");
-  if (slug) revalidatePath(`/services/${slug}`);
-}
-
-export async function createServiceAction(values: ServiceFormValues) {
+export async function createServiceAction(values: ServiceFormValues): Promise<ActionResult> {
   await requireSession();
   const data = serviceSchema.parse(values);
   const maxOrder = await prisma.service.aggregate({ _max: { order: true } });
-  const created = await prisma.service.create({
-    data: { ...data, order: (maxOrder._max.order ?? -1) + 1 },
-  });
-  revalidateServiceSurfaces(created.slug);
-  return created;
+  const result = await withSlugCheck(() =>
+    prisma.service.create({ data: { ...data, order: (maxOrder._max.order ?? -1) + 1 } })
+  );
+  if (!result) revalidateSite();
+  return result;
 }
 
-export async function updateServiceAction(id: string, values: ServiceFormValues) {
+export async function updateServiceAction(id: string, values: ServiceFormValues): Promise<ActionResult> {
   await requireSession();
   const data = serviceSchema.parse(values);
-  const updated = await prisma.service.update({ where: { id }, data });
-  revalidateServiceSurfaces(updated.slug);
-  return updated;
+  const result = await withSlugCheck(() => prisma.service.update({ where: { id }, data }));
+  if (!result) revalidateSite();
+  return result;
 }
 
 export async function deleteServiceAction(id: string) {
   await requireSession();
-  const deleted = await prisma.service.delete({ where: { id } });
-  revalidateServiceSurfaces(deleted.slug);
+  await prisma.service.delete({ where: { id } });
+  revalidateSite();
 }
 
 export async function reorderServicesAction(orderedIds: string[]) {
   await requireSession();
-  await Promise.all(orderedIds.map((id, index) => prisma.service.update({ where: { id }, data: { order: index } })));
-  revalidateServiceSurfaces();
+  await prisma.$transaction(
+    orderedIds.map((id, index) => prisma.service.update({ where: { id }, data: { order: index } }))
+  );
+  revalidateSite();
 }

@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { hrefSchema } from "@/lib/validators/shared";
 
 export const navigationItemSchema = z.object({
   label: z.string().min(1, "Label is required"),
-  href: z.string().min(1, "Link is required"),
+  href: hrefSchema,
   openNewTab: z.boolean(),
   visible: z.boolean(),
 });

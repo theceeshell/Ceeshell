@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Image as ImageIcon,
   Inbox,
+  Mail,
   Settings,
   Compass,
   PanelBottom,
@@ -51,15 +52,16 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { label: "Media Library", href: "/admin/media", icon: ImageIcon },
       { label: "Contact Inquiries", href: "/admin/inquiries", icon: Inbox },
+      { label: "Newsletter", href: "/admin/subscribers", icon: Mail },
     ],
   },
   {
     label: "Configuration",
     items: [
-      { label: "Website Settings", href: "/admin/settings", icon: Settings },
-      { label: "Navigation", href: "/admin/navigation", icon: Compass },
-      { label: "Footer", href: "/admin/footer", icon: PanelBottom },
-      { label: "SEO", href: "/admin/seo", icon: Search },
+      { label: "Website Settings", href: "/admin/settings", icon: Settings, adminOnly: true },
+      { label: "Navigation", href: "/admin/navigation", icon: Compass, adminOnly: true },
+      { label: "Footer", href: "/admin/footer", icon: PanelBottom, adminOnly: true },
+      { label: "SEO", href: "/admin/seo", icon: Search, adminOnly: true },
       { label: "Users", href: "/admin/users", icon: ShieldCheck, adminOnly: true },
     ],
   },

@@ -36,12 +36,16 @@ export function SectionFormDialog({ open, onOpenChange, pageSlug, editing, refer
   const [pickedType, setPickedType] = React.useState<SectionType | null>(null);
   const [name, setName] = React.useState("");
 
-  React.useEffect(() => {
+  // Reset the form each time the dialog opens (adjusting state during render,
+  // rather than in an effect, avoids an extra render pass).
+  const [wasOpen, setWasOpen] = React.useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setPickedType(editing ? (editing.type as SectionType) : null);
       setName(editing?.name ?? "");
     }
-  }, [open, editing]);
+  }
 
   const isEditing = Boolean(editing);
 

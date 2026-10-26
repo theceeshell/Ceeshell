@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/cms/metadata";
+import { getSiteSettings } from "@/lib/cms/site-data";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description: "Terms governing the use of the Cee-Shell website and engagement of Cee-Shell's creative services.",
-};
+export function generateMetadata(): Promise<Metadata> {
+  return pageMetadata({
+    title: "Terms of Service",
+    description: "Terms governing the use of the Cee-Shell website and engagement of Cee-Shell's creative services.",
+    path: "/terms",
+  });
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const { email } = await getSiteSettings();
+
   return (
     <Section className="pt-40">
       <Container className="mx-auto max-w-3xl">
@@ -30,7 +37,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-heading text-2xl font-medium text-primary">Intellectual Property</h2>
             <p className="mt-3">
-              Portfolio work displayed on this site remains the intellectual property of Cee-Shell and the respective clients unless otherwise agreed in writing. Ownership of deliverables from a specific engagement is defined in that engagement's contract.
+              Portfolio work displayed on this site remains the intellectual property of Cee-Shell and the respective clients unless otherwise agreed in writing. Ownership of deliverables from a specific engagement is defined in that engagement&apos;s contract.
             </p>
           </section>
           <section>
@@ -47,7 +54,13 @@ export default function TermsPage() {
           </section>
           <section>
             <h2 className="font-heading text-2xl font-medium text-primary">Contact</h2>
-            <p className="mt-3">Questions about these terms can be directed to hello@cee-shell.com.</p>
+            <p className="mt-3">
+              Questions about these terms can be directed to{" "}
+              <a href={`mailto:${email}`} className="text-primary underline underline-offset-4">
+                {email}
+              </a>
+              .
+            </p>
           </section>
         </div>
       </Container>

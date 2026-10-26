@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { cache } from "react";
+import Image from "@/components/ui/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight, Quote } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { pageMetadata } from "@/lib/cms/metadata";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +19,20 @@ export async function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
 
+const getProject = cache((slug: string) =>
+  prisma.portfolioProject.findUnique({ where: { slug }, include: { testimonial: true } })
+);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const project = await prisma.portfolioProject.findUnique({ where: { slug } });
+  const project = await getProject(slug);
   if (!project) return {};
-  return {
+  return pageMetadata({
     title: project.seoTitle || `${project.title} — Case Study`,
     description: project.seoDescription || project.excerpt,
-  };
+    path: `/portfolio/${project.slug}`,
+    image: project.coverImageUrl,
+  });
 }
 
 function storyBlocks(project: { challenge: string; research: string; strategy: string; concept: string; designProcess: string; photography: string; printing: string }) {
@@ -41,7 +49,7 @@ function storyBlocks(project: { challenge: string; research: string; strategy: s
 
 export default async function CaseStudyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const project = await prisma.portfolioProject.findUnique({ where: { slug }, include: { testimonial: true } });
+  const project = await getProject(slug);
   if (!project) notFound();
 
   const categories = project.categories as string[];
@@ -49,7 +57,10 @@ export default async function CaseStudyPage({ params }: { params: Promise<{ slug
   const gallery = project.gallery as string[];
   const deliverables = project.deliverables as string[];
 
-  const allProjects = await prisma.portfolioProject.findMany({ orderBy: { order: "asc" } });
+  const allProjects = await prisma.portfolioProject.findMany({
+    orderBy: { order: "asc" },
+    select: { slug: true, title: true, categories: true, coverImageUrl: true, coverAspect: true },
+  });
   const relatedRaw = allProjects.filter(
     (p) => p.slug !== slug && (p.categories as string[]).some((c) => categories.includes(c))
   ).slice(0, 3);

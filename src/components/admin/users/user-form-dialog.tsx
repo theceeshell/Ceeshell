@@ -93,28 +93,36 @@ export function UserFormDialog({ open, onOpenChange, initialValues, onSaved }: U
 
     try {
       if (isEditing && initialValues) {
-        await updateUserAction(initialValues.id, {
+        const result = await updateUserAction(initialValues.id, {
           name: values.name,
           email: values.email,
           password: values.password,
           role: values.role,
           active: values.active,
         });
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("User updated");
       } else {
-        await createUserAction({
+        const result = await createUserAction({
           name: values.name,
           email: values.email,
           password: values.password,
           role: values.role,
           active: values.active,
         });
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("User created");
       }
       onOpenChange(false);
       onSaved();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    } catch {
+      toast.error("Something went wrong — please try again.");
     }
   }
 

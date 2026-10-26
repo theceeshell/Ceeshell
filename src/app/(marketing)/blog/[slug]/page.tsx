@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { cache } from "react";
+import Image from "@/components/ui/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSiteSettings } from "@/lib/cms/site-data";
 import { estimateReadTime, toBlogCard } from "@/lib/cms/adapters";
+import { jsonLd, sanitizeBlogHtml } from "@/lib/cms/html";
+import { pageMetadata } from "@/lib/cms/metadata";
+import { siteConfig } from "@/lib/site-config";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/shared/reveal";
@@ -15,17 +19,26 @@ export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
 }
 
+/** Drafts are treated exactly like missing posts. */
+const getPublishedPost = cache((slug: string) => prisma.blogPost.findFirst({ where: { slug, status: "published" } }));
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await prisma.blogPost.findUnique({ where: { slug } });
+  const post = await getPublishedPost(slug);
   if (!post) return {};
-  return { title: post.seoTitle || post.title, description: post.seoDescription || post.excerpt };
+  return pageMetadata({
+    title: post.seoTitle || post.title,
+    description: post.seoDescription || post.excerpt,
+    path: `/blog/${post.slug}`,
+    image: post.featuredImageUrl,
+    type: "article",
+  });
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await prisma.blogPost.findUnique({ where: { slug } });
-  if (!post || post.status !== "published") notFound();
+  const post = await getPublishedPost(slug);
+  if (!post) notFound();
 
   const settings = await getSiteSettings();
 
@@ -49,6 +62,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     description: post.excerpt,
     image: post.featuredImageUrl,
     datePublished: post.publishDate.toISOString(),
+    dateModified: post.updatedAt.toISOString(),
+    mainEntityOfPage: `${siteConfig.url}/blog/${post.slug}`,
     author: { "@type": "Person", name: post.author },
     publisher: { "@type": "Organization", name: settings.companyName },
   };
@@ -57,7 +72,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(articleJsonLd) }}
       />
       <Section size="compact" className="bg-surface pt-40">
         <Container className="mx-auto max-w-3xl">
@@ -93,7 +108,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <Reveal>
             <div
               className="prose-cee-shell space-y-6 [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:text-primary sm:[&_h2]:text-3xl [&_p]:text-base [&_p]:leading-relaxed [&_p]:text-muted"
-              dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.contentHtml) }}
             />
           </Reveal>
         </Container>

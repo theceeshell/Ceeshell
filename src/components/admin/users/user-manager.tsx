@@ -111,11 +111,15 @@ export function UserManager({ users, currentUserId }: { users: UserRow[]; curren
                 description="They will immediately lose access to the admin panel. This can't be undone."
                 onConfirm={async () => {
                   try {
-                    await deleteUserAction(row.id);
+                    const result = await deleteUserAction(row.id);
+                    if (result?.error) {
+                      toast.error(result.error);
+                      return;
+                    }
                     toast.success("User deleted");
                     router.refresh();
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Something went wrong");
+                  } catch {
+                    toast.error("Something went wrong — please try again.");
                   }
                 }}
               />

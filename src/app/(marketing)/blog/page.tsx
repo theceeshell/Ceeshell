@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPageWithSections } from "@/lib/cms/resolve-section";
+import { pageMetadata } from "@/lib/cms/metadata";
 import { SectionRenderer } from "@/components/cms/section-renderer";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -9,7 +10,7 @@ import { NewsletterForm } from "@/components/shared/newsletter-form";
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getPageWithSections("blog");
   if (!page) return {};
-  return { title: page.title, description: page.description };
+  return pageMetadata({ title: page.title, description: page.description, path: "/blog" });
 }
 
 export default async function BlogPage() {

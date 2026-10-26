@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, X } from "lucide-react";
@@ -88,13 +88,12 @@ export function BlogForm({ post }: BlogFormProps) {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<BlogPostFormValues>({ resolver: zodResolver(blogPostSchema), defaultValues });
 
   const [slugEdited, setSlugEdited] = React.useState(isEditing);
-  const title = watch("title");
+  const title = useWatch({ control, name: "title" });
 
   React.useEffect(() => {
     if (slugEdited) return;
@@ -118,13 +117,14 @@ export function BlogForm({ post }: BlogFormProps) {
     const payload = { ...values, contentJson: contentJson ?? {}, contentHtml };
 
     try {
-      if (isEditing && post) {
-        await updateBlogPostAction(post.id, payload);
-        toast.success("Post updated");
-      } else {
-        await createBlogPostAction(payload);
-        toast.success("Post created");
+      const result = isEditing && post
+        ? await updateBlogPostAction(post.id, payload)
+        : await createBlogPostAction(payload);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(isEditing ? "Post updated" : "Post created");
       router.push("/admin/blog");
       router.refresh();
     } catch {

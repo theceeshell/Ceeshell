@@ -20,6 +20,8 @@ import {
 import type { SectionType } from "@/lib/cms/section-types";
 import type { ReferenceOptions } from "@/lib/cms/reference-options";
 
+// Editor state for 16 different section shapes; validated against SECTION_SCHEMAS on submit.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Content = Record<string, any>;
 
 function defaultsFor(type: SectionType): Content {

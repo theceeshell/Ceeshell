@@ -1,21 +1,33 @@
+/**
+ * Absolute origin of the public site, without a trailing slash. Used for
+ * metadataBase, canonical URLs, the sitemap and robots.txt.
+ *
+ * NEXT_PUBLIC_SITE_URL wins when set (set it once a custom domain is live).
+ * Otherwise Vercel's VERCEL_PROJECT_PRODUCTION_URL (available at build and
+ * runtime) points at the production domain, so preview deployments still
+ * canonicalize to production instead of to themselves.
+ */
+function resolveSiteUrl() {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+  const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (vercelProduction) return `https://${vercelProduction}`;
+  return "http://localhost:3000";
+}
+
+/**
+ * Static fallbacks for when SiteSettings can't be read. Real contact details,
+ * social links etc. live in the database (Admin -> Site Settings).
+ */
 export const siteConfig = {
   name: "Cee-Shell",
   tagline: "Creative Branding, Photography & Packaging Studio",
   description:
     "Cee-Shell is a full-service creative agency helping ambitious brands communicate better through strategic branding, graphic design, commercial photography, packaging and print.",
-  url: "https://www.cee-shell.com",
-  email: "hello@cee-shell.com",
-  phone: "+1 (212) 555-0148",
-  address: "148 Meridian Avenue, Suite 6, New York, NY 10012",
-  hours: "Monday – Friday, 9:00am – 6:00pm",
-  social: {
-    instagram: "https://instagram.com/ceeshell",
-    linkedin: "https://linkedin.com/company/ceeshell",
-    behance: "https://behance.net/ceeshell",
-    pinterest: "https://pinterest.com/ceeshell",
-  },
+  url: resolveSiteUrl(),
 };
 
+/** Initial navigation, used only by the seed script. */
 export const mainNav = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
@@ -26,25 +38,3 @@ export const mainNav = [
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/contact" },
 ];
-
-export const footerNav = {
-  studio: [
-    { label: "About", href: "/about" },
-    { label: "Process", href: "/process" },
-    { label: "Industries", href: "/industries" },
-    { label: "Blog", href: "/blog" },
-    { label: "FAQ", href: "/faq" },
-  ],
-  services: [
-    { label: "Photography", href: "/services/photography" },
-    { label: "Graphic Design", href: "/services/graphic-design" },
-    { label: "Packaging Design", href: "/services/packaging-design" },
-    { label: "Printing", href: "/services/printing" },
-    { label: "Corporate Gifts", href: "/services/corporate-gifts" },
-  ],
-  work: [
-    { label: "Portfolio", href: "/portfolio" },
-    { label: "Case Studies", href: "/portfolio" },
-    { label: "Start a Project", href: "/contact" },
-  ],
-};

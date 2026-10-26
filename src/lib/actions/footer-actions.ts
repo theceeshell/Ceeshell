@@ -1,21 +1,17 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth/require-session";
+import { requireAdmin } from "@/lib/auth/require-session";
+import { revalidateSite } from "@/lib/actions/helpers";
 import { footerConfigSchema, type FooterConfigFormValues } from "@/lib/validators/footer";
 
 export async function updateFooterConfigAction(values: FooterConfigFormValues) {
-  await requireSession();
+  await requireAdmin();
   const data = footerConfigSchema.parse(values);
-  await prisma.footerConfig.update({
+  await prisma.footerConfig.upsert({
     where: { id: "singleton" },
-    data: {
-      ...data,
-      quickLinks: data.quickLinks,
-      serviceLinks: data.serviceLinks,
-    },
+    update: data,
+    create: { id: "singleton", ...data },
   });
-  revalidatePath("/admin/footer");
-  revalidatePath("/", "layout");
+  revalidateSite();
 }

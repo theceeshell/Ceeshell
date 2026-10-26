@@ -20,14 +20,16 @@ datasource db {
 
 /// role: "ADMIN" | "EDITOR"
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("EDITOR")
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  passwordHash   String
+  role           String   @default("EDITOR")
+  active         Boolean  @default(true)
+  /// Embedded in the session JWT; bumping it invalidates every existing session for this user.
+  sessionVersion Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // ---------------------------------------------------------------------------
@@ -255,6 +257,8 @@ model BlogPost {
   seoDescription   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  @@index([status, publishDate])
 }
 
 model Faq {
@@ -266,29 +270,49 @@ model Faq {
 }
 
 model Media {
-  id        String   @id @default(cuid())
-  filename  String
-  url       String
-  mimeType  String
-  size      Int
-  folder    String   @default("general")
-  alt       String   @default("")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  filename    String
+  url         String
+  /// Object key inside the Supabase Storage "media" bucket (used to delete the file).
+  storagePath String?
+  mimeType    String
+  size        Int
+  folder      String   @default("general")
+  alt         String   @default("")
+  createdAt   DateTime @default(now())
 }
 
 /// status: "new" | "in_progress" | "closed"
 model ContactInquiry {
-  id            String   @id @default(cuid())
-  name          String
-  company       String
-  phone         String?
-  email         String
-  budget        String?
-  timeline      String?
-  service       String?
-  industry      String?
-  message       String
-  attachmentUrl String?
-  status        String   @default("new")
-  createdAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  name           String
+  company        String
+  phone          String?
+  email          String
+  budget         String?
+  timeline       String?
+  service        String?
+  industry       String?
+  message        String
+  /// Object key inside the private Supabase Storage "inquiry-attachments" bucket.
+  attachmentPath String?
+  status         String   @default("new")
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/// Fixed-window counters backing rate limits (login, contact form, newsletter).
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
 }

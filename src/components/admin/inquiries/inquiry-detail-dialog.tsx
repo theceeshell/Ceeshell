@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Paperclip } from "lucide-react";
+import { Loader2, Paperclip } from "lucide-react";
+import { toast } from "sonner";
+import { getInquiryAttachmentUrlAction } from "@/lib/actions/inquiry-management-actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
@@ -70,16 +72,7 @@ export function InquiryDetailDialog({ inquiry, open, onOpenChange, onStatusChang
             </p>
           </div>
 
-          {inquiry.attachmentUrl && (
-            <a
-              href={inquiry.attachmentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-            >
-              <Paperclip className="h-4 w-4" /> View Attachment
-            </a>
-          )}
+          {inquiry.attachmentPath && <AttachmentLink inquiryId={inquiry.id} />}
         </div>
       </DialogContent>
     </Dialog>
@@ -92,5 +85,31 @@ function DetailField({ label, children }: { label: string; children: React.React
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
       <div className="mt-0.5 text-sm text-text">{children}</div>
     </div>
+  );
+}
+
+function AttachmentLink({ inquiryId }: { inquiryId: string }) {
+  const [pending, setPending] = React.useState(false);
+
+  async function download() {
+    setPending(true);
+    try {
+      window.location.assign(await getInquiryAttachmentUrlAction(inquiryId));
+    } catch {
+      toast.error("Couldn't load the attachment — please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={download}
+      disabled={pending}
+      className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline disabled:opacity-60"
+    >
+      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />} Download Attachment
+    </button>
   );
 }

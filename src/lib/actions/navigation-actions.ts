@@ -1,42 +1,34 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/auth/require-session";
+import { requireAdmin } from "@/lib/auth/require-session";
+import { revalidateSite } from "@/lib/actions/helpers";
 import { navigationItemSchema, type NavigationItemFormValues } from "@/lib/validators/navigation";
 
-function revalidateNavigationSurfaces() {
-  revalidatePath("/admin/navigation");
-  // Defensive: the marketing route group already runs force-dynamic, so the
-  // navbar reads fresh NavigationItem rows on every request regardless.
-  revalidatePath("/", "layout");
-}
 
 export async function createNavigationItemAction(values: NavigationItemFormValues) {
-  await requireSession();
+  await requireAdmin();
   const data = navigationItemSchema.parse(values);
   const maxOrder = await prisma.navigationItem.aggregate({ _max: { order: true } });
   await prisma.navigationItem.create({ data: { ...data, order: (maxOrder._max.order ?? -1) + 1 } });
-  revalidateNavigationSurfaces();
+  revalidateSite();
 }
 
 export async function updateNavigationItemAction(id: string, values: NavigationItemFormValues) {
-  await requireSession();
+  await requireAdmin();
   const data = navigationItemSchema.parse(values);
   await prisma.navigationItem.update({ where: { id }, data });
-  revalidateNavigationSurfaces();
+  revalidateSite();
 }
 
 export async function deleteNavigationItemAction(id: string) {
-  await requireSession();
+  await requireAdmin();
   await prisma.navigationItem.delete({ where: { id } });
-  revalidateNavigationSurfaces();
+  revalidateSite();
 }
 
 export async function reorderNavigationItemsAction(orderedIds: string[]) {
-  await requireSession();
-  await Promise.all(
-    orderedIds.map((id, index) => prisma.navigationItem.update({ where: { id }, data: { order: index } }))
-  );
-  revalidateNavigationSurfaces();
+  await requireAdmin();
+  await prisma.$transaction(orderedIds.map((id, index) => prisma.navigationItem.update({ where: { id }, data: { order: index } })));
+  revalidateSite();
 }

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -102,7 +102,6 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<PortfolioFormShape>({
@@ -112,25 +111,25 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
 
   const galleryArray = useFieldArray({ control, name: "gallery" });
 
-  const title = watch("title");
+  const title = useWatch({ control, name: "title" });
   React.useEffect(() => {
     if (!slugTouched) {
       setValue("slug", slugify(title || ""), { shouldValidate: Boolean(title) });
     }
   }, [title, slugTouched, setValue]);
 
-  const selectedCategories = watch("categories");
-  const selectedIndustryIds = watch("industryIds");
+  const selectedCategories = useWatch({ control, name: "categories" });
+  const selectedIndustryIds = useWatch({ control, name: "industryIds" });
 
   function toggleCategory(category: string, checked: boolean) {
-    const current = watch("categories");
+    const current = selectedCategories;
     setValue("categories", checked ? [...current, category] : current.filter((c) => c !== category), {
       shouldValidate: true,
     });
   }
 
   function toggleIndustry(id: string, checked: boolean) {
-    const current = watch("industryIds");
+    const current = selectedIndustryIds;
     setValue("industryIds", checked ? [...current, id] : current.filter((i) => i !== id));
   }
 
@@ -141,13 +140,14 @@ export function PortfolioForm({ initialValues, industries, testimonials }: Portf
       testimonialId: values.testimonialId === "none" ? null : values.testimonialId,
     };
     try {
-      if (isEditing && initialValues) {
-        await updatePortfolioProjectAction(initialValues.id, payload);
-        toast.success("Project updated");
-      } else {
-        await createPortfolioProjectAction(payload);
-        toast.success("Project created");
+      const result = isEditing && initialValues
+        ? await updatePortfolioProjectAction(initialValues.id, payload)
+        : await createPortfolioProjectAction(payload);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(isEditing ? "Project updated" : "Project created");
       router.push("/admin/portfolio");
       router.refresh();
     } catch {

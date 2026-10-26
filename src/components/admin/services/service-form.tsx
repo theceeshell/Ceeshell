@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   useForm,
   useFieldArray,
+  useWatch,
   Controller,
   type Control,
   type UseFormRegister,
@@ -115,7 +116,6 @@ export function ServiceForm({ service }: ServiceFormProps) {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<ServiceFormShape>({
@@ -127,7 +127,7 @@ export function ServiceForm({ service }: ServiceFormProps) {
   const galleryArray = useFieldArray({ control, name: "gallery" });
   const faqsArray = useFieldArray({ control, name: "faqs" });
 
-  const nameValue = watch("name");
+  const nameValue = useWatch({ control, name: "name" });
 
   React.useEffect(() => {
     if (!isEditing && !slugTouched) {
@@ -145,13 +145,14 @@ export function ServiceForm({ service }: ServiceFormProps) {
     };
 
     try {
-      if (isEditing && service) {
-        await updateServiceAction(service.id, payload);
-        toast.success("Service updated");
-      } else {
-        await createServiceAction(payload);
-        toast.success("Service created");
+      const result = isEditing && service
+        ? await updateServiceAction(service.id, payload)
+        : await createServiceAction(payload);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(isEditing ? "Service updated" : "Service created");
       router.push("/admin/services");
       router.refresh();
     } catch {

@@ -1,3 +1,4 @@
+import Image from "@/components/ui/image";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -8,6 +9,7 @@ export interface TeamMemberData {
   name: string;
   position: string;
   bio: string;
+  photoUrl?: string | null;
 }
 
 export function TeamShowcase({ eyebrow, heading, members }: { eyebrow?: string; heading: string; members: TeamMemberData[] }) {
@@ -19,9 +21,19 @@ export function TeamShowcase({ eyebrow, heading, members }: { eyebrow?: string; 
           {members.map((member) => (
             <RevealItem key={member.name}>
               <div className="rounded-[1.5rem] border border-border bg-background p-8">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/8 font-heading text-xl font-medium text-primary">
-                  {initialsFromName(member.name)}
-                </div>
+                {member.photoUrl ? (
+                  <Image
+                    src={member.photoUrl}
+                    alt={member.name}
+                    width={64}
+                    height={64}
+                    className="h-16 w-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/8 font-heading text-xl font-medium text-primary">
+                    {initialsFromName(member.name)}
+                  </div>
+                )}
                 <h3 className="mt-6 font-heading text-xl font-medium text-primary">{member.name}</h3>
                 <p className="text-sm font-semibold text-secondary">{member.position}</p>
                 <p className="mt-3 text-sm leading-relaxed text-muted">{member.bio}</p>
