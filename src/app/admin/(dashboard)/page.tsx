@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth/session";
 import { PageHeader } from "@/components/admin/ui/page-header";
 import { StatCard } from "@/components/admin/ui/stat-card";
+import { formatDate } from "@/lib/format-date";
 
 export const metadata = { title: "Dashboard" };
 
@@ -68,7 +69,7 @@ export default async function AdminDashboardPage() {
                     <p className="truncate font-medium text-text">{inquiry.name} &middot; {inquiry.company}</p>
                     <p className="truncate text-sm text-muted">{inquiry.message}</p>
                   </div>
-                  <span className="shrink-0 text-xs text-muted">{inquiry.createdAt.toLocaleDateString()}</span>
+                  <span className="shrink-0 text-xs text-muted">{formatDate(inquiry.createdAt)}</span>
                 </li>
               ))}
             </ul>

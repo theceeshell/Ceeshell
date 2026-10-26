@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { deleteSubscriberAction } from "@/lib/actions/newsletter-actions";
+import { formatDate } from "@/lib/format-date";
 
 export interface SubscriberRow {
   id: string;
@@ -40,7 +41,7 @@ export function SubscriberManager({ subscribers }: { subscribers: SubscriberRow[
       key: "createdAt",
       header: "Subscribed",
       sortValue: (row) => new Date(row.createdAt).getTime(),
-      render: (row) => <span className="text-muted">{format(new Date(row.createdAt), "d MMM yyyy")}</span>,
+      render: (row) => <span className="text-muted">{formatDate(row.createdAt)}</span>,
     },
   ];
 

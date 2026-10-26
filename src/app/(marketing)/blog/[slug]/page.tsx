@@ -14,6 +14,7 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/shared/reveal";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
+import { formatDate } from "@/lib/format-date";
 
 export async function generateStaticParams() {
   const posts = await prisma.blogPost.findMany({ where: { status: "published" }, select: { slug: true } });
@@ -88,7 +89,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <span className="text-muted normal-case tracking-normal">{readTime}</span>
             <span className="text-muted">&middot;</span>
             <span className="text-muted normal-case tracking-normal">
-              {post.publishDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              {formatDate(post.publishDate, "long")}
             </span>
           </div>
           <h1 className="mt-6 text-balance font-heading text-4xl font-medium leading-[1.1] text-primary sm:text-5xl">

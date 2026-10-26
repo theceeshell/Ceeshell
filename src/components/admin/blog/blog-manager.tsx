@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { StatusBadge } from "@/components/admin/ui/status-badge";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { deleteBlogPostAction, duplicateBlogPostAction } from "@/lib/actions/blog-actions";
+import { formatDate } from "@/lib/format-date";
 
 export interface BlogRow {
   id: string;
@@ -87,7 +88,7 @@ export function BlogManager({ posts }: { posts: BlogRow[] }) {
       header: "Publish Date",
       sortValue: (row) => row.publishDate.getTime(),
       render: (row) =>
-        row.publishDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+        formatDate(row.publishDate),
     },
   ];
 

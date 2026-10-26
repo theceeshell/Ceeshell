@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { UserFormDialog } from "@/components/admin/users/user-form-dialog";
 import { deleteUserAction } from "@/lib/actions/user-actions";
+import { formatDate } from "@/lib/format-date";
 
 export interface UserRow {
   id: string;
@@ -63,7 +64,7 @@ export function UserManager({ users, currentUserId }: { users: UserRow[]; curren
       key: "createdAt",
       header: "Created",
       sortValue: (row) => new Date(row.createdAt).getTime(),
-      render: (row) => new Date(row.createdAt).toLocaleDateString(),
+      render: (row) => formatDate(row.createdAt),
     },
   ];
 

@@ -11,6 +11,7 @@ import { Input, Label } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
 import { UploadDialog } from "@/components/admin/media/upload-dialog";
 import { deleteMediaAction, updateMediaAltAction } from "@/lib/actions/media-actions";
+import { formatDate } from "@/lib/format-date";
 
 export interface MediaRow {
   id: string;
@@ -205,7 +206,7 @@ function MediaPreviewDialog({ item, onOpenChange }: { item: MediaRow | null; onO
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted">Uploaded</p>
-                <p className="mt-0.5 text-text">{new Date(item.createdAt).toLocaleDateString()}</p>
+                <p className="mt-0.5 text-text">{formatDate(item.createdAt)}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted">Type</p>

@@ -16,6 +16,7 @@ import {
   type InquiryStatus,
 } from "@/lib/actions/inquiry-management-actions";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/format-date";
 
 export interface InquiryRow {
   id: string;
@@ -124,7 +125,7 @@ export function InquiryManager({ inquiries }: { inquiries: InquiryRow[] }) {
       key: "createdAt",
       header: "Submitted",
       sortValue: (row) => new Date(row.createdAt).getTime(),
-      render: (row) => <span className="text-sm text-muted">{new Date(row.createdAt).toLocaleDateString()}</span>,
+      render: (row) => <span className="text-sm text-muted">{formatDate(row.createdAt)}</span>,
     },
   ];
 
